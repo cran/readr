@@ -1,4 +1,4 @@
-fd052d4faec774b5d133030882d513f3 *DESCRIPTION
+40fe047d01b72dded0d2fd8ff93e177d *DESCRIPTION
 121110a184654cd6957653586f538786 *NAMESPACE
 5ffa9befe58973591af68a89994cecd6 *R/RcppExports.R
 5371795e72240b41d0ebd96a27e1d50f *R/col_names.R
@@ -65,7 +65,7 @@ cb9609b35a55a87121560d55eb95b80a *src/DateTime.h
 53dfa6c4e6a60cbf0b9d10e308288ce2 *src/DateTimeLocale.cpp
 48a9407a56d1bdb9621003a08cc9dcf4 *src/DateTimeLocale.h
 0ddf262077e898e5c669c6baa78e7bb1 *src/DateTimeParser.h
-07cfdb3eff5e2ea22ce68665be3adb17 *src/Iconv.h
+d953dca1dfbd4b839a79583f975fb158 *src/Iconv.h
 ea5c667e6402d3cc2c14d6ff9753b910 *src/Makevars.win
 144337a3bd2c3bd8a1e61eea3ec61549 *src/Progress.h
 dbe056113acb85943a68c84517215e3e *src/RcppExports.cpp

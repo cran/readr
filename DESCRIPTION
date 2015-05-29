@@ -1,5 +1,5 @@
 Package: readr
-Version: 0.1.0
+Version: 0.1.1
 Title: Read Tabular Data
 Description: Read flat/tabular text files from disk.
 Authors@R: c(
@@ -14,12 +14,16 @@ Imports: Rcpp (>= 0.11.5), curl
 Suggests: testthat, knitr, DiagrammeR
 License: GPL (>= 2)
 VignetteBuilder: knitr
-Packaged: 2015-04-08 20:31:26 UTC; hadley
+Packaged: 2015-05-29 14:19:20 UTC; ripley
 Author: Hadley Wickham [aut, cre],
   Romain Francois [aut],
   R Core Team [ctb] (Date time code adapted from R),
   RStudio [cph]
-Maintainer: Hadley Wickham <hadley@rstudio.com>
+Maintainer: ORPHANED
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2015-04-09 01:03:53
+Date/Publication: 2015-05-29 16:26:58
+X-CRAN-Original-Maintainer: Hadley Wickham <hadley@rstudio.com>
+X-CRAN-Comment: Orphaned on 2015-05-29 as non-cross-platform calls to
+        iconv() were not corrected by the original maintainer (and have
+        been by the CRAN team).
