@@ -1,8 +1,7 @@
-#include "Tokenizer.h"
-
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#include "Tokenizer.h"
 #include "TokenizerDelim.h"
 #include "TokenizerFwf.h"
 #include "TokenizerLine.h"
@@ -14,19 +13,20 @@ TokenizerPtr Tokenizer::create(List spec) {
   if (subclass == "tokenizer_delim") {
     char delim = as<char>(spec["delim"]);
     char quote = as<char>(spec["quote"]);
-    std::string na = as<std::string>(spec["na"]);
+    std::vector<std::string> na = as<std::vector<std::string> >(spec["na"]);
+    std::string comment = as<std::string>(spec["comment"]);
+    bool trimWs = as<bool>(spec["trim_ws"]);
     bool escapeDouble = as<bool>(spec["escape_double"]);
     bool escapeBackslash = as<bool>(spec["escape_backslash"]);
 
     return TokenizerPtr(new
-      TokenizerDelim(delim, quote, na, escapeBackslash, escapeDouble)
+      TokenizerDelim(delim, quote, na, comment, trimWs, escapeBackslash, escapeDouble)
     );
   } else if (subclass == "tokenizer_fwf") {
     std::vector<int>
       begin = as<std::vector<int> >(spec["begin"]),
       end = as<std::vector<int> >(spec["end"]);
-
-    std::string na = as<std::string>(spec["na"]);
+    std::vector<std::string> na = as<std::vector<std::string> >(spec["na"]);
 
     return TokenizerPtr(new TokenizerFwf(begin, end, na));
   } else if (subclass == "tokenizer_line") {

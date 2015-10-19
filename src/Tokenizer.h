@@ -2,10 +2,7 @@
 #define FASTREAD_TOKENIZER_H_
 
 #include <Rcpp.h>
-
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/container/string.hpp>
+#include "boost.h"
 #include "Warnings.h"
 class Token;
 
@@ -39,7 +36,8 @@ public:
     pWarnings_ = pWarnings;
   }
 
-  inline void warn(int row, int col, std::string expected, std::string actual = "") {
+  inline void warn(int row, int col, const std::string& expected,
+                   const std::string& actual = "") {
     if (pWarnings_ == NULL) {
       Rcpp::warning("[%i, %i]: expected %s", row + 1, col + 1, expected);
       return;

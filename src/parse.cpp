@@ -1,10 +1,11 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+#include "Collector.h"
+#include "LocaleInfo.h"
 #include "Source.h"
 #include "Tokenizer.h"
 #include "TokenizerLine.h"
-#include "Collector.h"
 #include "Warnings.h"
 
 // [[Rcpp::export]]
@@ -13,11 +14,12 @@ IntegerVector dim_tokens_(List sourceSpec, List tokenizerSpec) {
   TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
   tokenizer->tokenize(source->begin(), source->end());
 
-  size_t rows = -1, cols = -1;
+  int rows = -1, cols = -1;
 
   for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF; t = tokenizer->nextToken()) {
     rows = t.row();
-    if (t.col() > cols)
+
+    if ((int) t.col() > cols)
       cols = t.col();
   }
 
@@ -25,7 +27,7 @@ IntegerVector dim_tokens_(List sourceSpec, List tokenizerSpec) {
 }
 
 // [[Rcpp::export]]
-std::vector<int> count_fields_(List sourceSpec, List tokenizerSpec) {
+std::vector<int> count_fields_(List sourceSpec, List tokenizerSpec, int n_max) {
   SourcePtr source = Source::create(sourceSpec);
   TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
   tokenizer->tokenize(source->begin(), source->end());
@@ -33,15 +35,45 @@ std::vector<int> count_fields_(List sourceSpec, List tokenizerSpec) {
   std::vector<int> fields;
 
   for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF; t = tokenizer->nextToken()) {
+    if (n_max > 0 && t.row() >= (size_t) n_max)
+      break;
+
     if (t.row() >= fields.size()) {
       fields.resize(t.row() + 1);
     }
 
-    fields[t.row()] = t.col();
+    fields[t.row()] = t.col() + 1;
   }
 
   return fields;
 }
+
+// [[Rcpp::export]]
+RObject guess_header_(List sourceSpec, List tokenizerSpec, List locale_) {
+  Warnings warnings;
+  LocaleInfo locale(locale_);
+  SourcePtr source = Source::create(sourceSpec);
+  TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
+  tokenizer->tokenize(source->begin(), source->end());
+  tokenizer->setWarnings(&warnings);
+
+  CollectorCharacter out(&locale.encoder_);
+  out.setWarnings(&warnings);
+
+  for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF; t = tokenizer->nextToken()) {
+    if (t.row() > (size_t) 0) // only read one row
+      break;
+
+    if (t.col() >= out.size()) {
+      out.resize(t.col() + 1);
+    }
+
+    out.setValue(t.col(), t);
+  }
+
+  return out.vector();
+}
+
 
 // [[Rcpp::export]]
 RObject tokenize_(List sourceSpec, List tokenizerSpec, int n_max) {
@@ -74,11 +106,14 @@ RObject tokenize_(List sourceSpec, List tokenizerSpec, int n_max) {
 }
 
 // [[Rcpp::export]]
-SEXP parse_vector_(CharacterVector x, List collectorSpec) {
+SEXP parse_vector_(CharacterVector x, List collectorSpec,
+                   List locale_, const std::vector<std::string>& na) {
   Warnings warnings;
   int n = x.size();
 
-  boost::shared_ptr<Collector> col = Collector::create(collectorSpec);
+  LocaleInfo locale(locale_);
+
+  boost::shared_ptr<Collector> col = Collector::create(collectorSpec, &locale);
   col->setWarnings(&warnings);
   col->resize(n);
 
@@ -88,7 +123,9 @@ SEXP parse_vector_(CharacterVector x, List collectorSpec) {
       t = Token(TOKEN_MISSING, i, -1);
     } else {
       SEXP string = x[i];
-      t = Token(CHAR(string), CHAR(string) + Rf_length(string), i, -1);
+      t = Token(CHAR(string), CHAR(string) + Rf_length(string), i, -1, false);
+      t.trim();
+      t.flagNA(na);
     }
     col->setValue(i, t);
   }

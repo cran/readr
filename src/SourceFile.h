@@ -2,10 +2,7 @@
 #define FASTREAD_SOURCEFILE_H_
 
 #include <Rcpp.h>
-
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-
+#include "boost.h"
 #include "Source.h"
 
 class SourceFile : public Source {
@@ -17,7 +14,8 @@ class SourceFile : public Source {
 
 public:
 
-  SourceFile(const std::string& path, int skip = 0) {
+  SourceFile(const std::string& path, int skip = 0,
+             const std::string& comment = "") {
     try {
       fm_ = boost::interprocess::file_mapping(path.c_str(),
         boost::interprocess::read_only);
@@ -31,7 +29,7 @@ public:
     end_ = begin_ + mr_.get_size();
 
     // Skip lines, if needed
-    begin_ = skipLines(begin_, end_, skip);
+    begin_ = skipLines(begin_, end_, skip, comment);
   }
 
   const char* begin() {

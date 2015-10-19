@@ -7,6 +7,7 @@
 #'
 #' @inheritParams datasource
 #' @param tokenizer A tokenizer specification.
+#' @param skip Number of lines to skip before reading data.
 #' @param n_max Optionally, maximum number of rows to tokenize.
 #' @keywords internal
 #' @export
@@ -15,8 +16,8 @@
 #'
 #' # Only tokenize first two lines
 #' tokenize("1,2\n3,4,5\n\n6", n = 2)
-tokenize <- function(file, tokenizer = tokenizer_csv(), n_max = -1L) {
-  ds <- datasource(file)
+tokenize <- function(file, tokenizer = tokenizer_csv(), skip = 0, n_max = -1L) {
+  ds <- datasource(file, skip = skip)
   tokenize_(ds, tokenizer, n_max)
 }
 
@@ -34,9 +35,14 @@ NULL
 
 #' @export
 #' @rdname Tokenizers
-#' @param na String to use for missing values.
+#' @param comment A string used to identify comments. Any text after the
+#'   comment characters will be silently ignored.
+#' @param na Character vector of strings to use for missing values. Set this
+#'   option to \code{character()} to indicate no missing values.
 #' @param delim Single character used to separate fields within a record.
 #' @param quote Single character used to quote strings.
+#' @param trim_ws Should leading and trailing whitespace be trimmed from
+#'   each field before parsing it?
 #' @param escape_double Does the file escape quotes by doubling them?
 #'   i.e. If this option is \code{TRUE}, the value \code{""""} represents
 #'   a single quote, \code{\"}.
@@ -44,13 +50,17 @@ NULL
 #'   characters? This is more general than \code{escape_double} as backslashes
 #'   can be used to escape the delimeter character, the quote characer, or
 #'   to add special characters like \code{\\n}.
-tokenizer_delim <- function(delim, quote = '"', na = "NA",
-                            escape_double = TRUE, escape_backslash = FALSE) {
+tokenizer_delim <- function(delim, quote = '"', na = "NA", comment = "",
+                            trim_ws = TRUE,
+                            escape_double = TRUE,
+                            escape_backslash = FALSE) {
   structure(
     list(
       delim = delim,
       quote = quote,
       na = na,
+      comment = comment,
+      trim_ws = trim_ws,
       escape_double = escape_double,
       escape_backslash = escape_backslash
     ),
@@ -60,11 +70,13 @@ tokenizer_delim <- function(delim, quote = '"', na = "NA",
 
 #' @export
 #' @rdname Tokenizers
-tokenizer_csv <- function(na = "NA") {
+tokenizer_csv <- function(na = "NA", comment = "", trim_ws = TRUE) {
   tokenizer_delim(
     delim = ",",
     quote = '"',
     na = na,
+    comment = comment,
+    trim_ws = trim_ws,
     escape_double = TRUE,
     escape_backslash = FALSE
   )
@@ -72,11 +84,13 @@ tokenizer_csv <- function(na = "NA") {
 
 #' @export
 #' @rdname Tokenizers
-tokenizer_tsv <- function(na = "NA") {
+tokenizer_tsv <- function(na = "NA", comment = "", trim_ws = TRUE) {
   tokenizer_delim(
     delim = "\t",
     quote = '"',
     na = na,
+    comment = comment,
+    trim_ws = trim_ws,
     escape_double = TRUE,
     escape_backslash = FALSE
   )

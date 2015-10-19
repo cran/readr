@@ -1,8 +1,10 @@
 #ifndef FASTREAD_TOKEN_H_
 #define FASTREAD_TOKEN_H_
 
+#include <Rcpp.h>
 #include <string>
 #include "Source.h"
+#include "Iconv.h"
 #include "Tokenizer.h"
 
 enum TokenType {
@@ -16,6 +18,7 @@ class Token {
   TokenType type_;
   SourceIterator begin_, end_;
   size_t row_, col_;
+  bool hasNull_;
 
   Tokenizer* pTokenizer_;
 
@@ -23,12 +26,14 @@ public:
 
   Token(): type_(TOKEN_EMPTY), row_(0), col_(0) {}
   Token(TokenType type, int row, int col): type_(type), row_(row), col_(col) {}
-  Token(SourceIterator begin, SourceIterator end, int row, int col, Tokenizer* pTokenizer = NULL):
+  Token(SourceIterator begin, SourceIterator end, int row, int col, bool hasNull,
+        Tokenizer* pTokenizer = NULL):
     type_(TOKEN_STRING),
     begin_(begin),
     end_(end),
     row_(row),
     col_(col),
+    hasNull_(hasNull),
     pTokenizer_(pTokenizer)
   {
     if (begin_ == end_)
@@ -51,6 +56,29 @@ public:
     return "";
   }
 
+  SEXP asRaw() const {
+    int n = (type_ == TOKEN_STRING) ? end_ - begin_ : 0;
+    Rcpp::RawVector out(n);
+
+    if (n > 0)
+      memcpy(RAW(out), begin_, n);
+
+    return out;
+  }
+
+  SEXP asSEXP(Iconv* pEncoder) const {
+    switch(type_) {
+    case TOKEN_STRING:   {
+      boost::container::string buffer;
+      SourceIterators string = getString(&buffer);
+
+      return pEncoder->makeSEXP(string.first, string.second, hasNull_);
+    }
+    default:
+      return NA_STRING;
+    }
+  }
+
   TokenType type() const {
     return type_;
   }
@@ -70,10 +98,14 @@ public:
     return col_;
   }
 
+  bool hasNull() const {
+    return hasNull_;
+  }
+
   Token& trim() {
-    while (*begin_ == ' ' && begin_ != end_)
+    while (begin_ != end_ && *begin_ == ' ')
       begin_++;
-    while (*(end_ - 1) == ' ' && end_ != begin_)
+    while (end_ != begin_ && *(end_ - 1) == ' ')
       end_--;
 
     if (begin_ == end_)
@@ -82,14 +114,19 @@ public:
     return *this;
   }
 
-  Token& flagNA(std::string NA) {
-    if ((size_t) (end_ - begin_) != NA.size())
-      return *this;
+  Token& flagNA(const std::vector<std::string>& NA) {
 
-    if (strncmp(begin_, &NA[0], NA.size()) != 0)
-      return *this;
+    std::vector<std::string>::const_iterator it;
+    for (it = NA.begin(); it != NA.end(); ++it) {
+      if ((size_t) (end_ - begin_) != it->size())
+        continue;
 
-    type_ = TOKEN_MISSING;
+      if (strncmp(begin_, it->data(), it->size()) == 0) {
+        type_ = TOKEN_MISSING;
+        break;
+      }
+    }
+
     return *this;
   }
 

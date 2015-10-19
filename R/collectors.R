@@ -2,12 +2,22 @@ collector <- function(type, ...) {
   structure(list(...), class = c(paste0("collector_", type), "collector"))
 }
 
+is.collector <- function(x) inherits(x, "collector")
+
+collector_guess <- function(x, locale = default_locale()) {
+  collectorGuess(x, locale)
+}
+
 #' @export
 print.collector <- function(x, ...) {
   cat("<", class(x)[1], ">\n", sep = "")
 }
 
 collector_find <- function(name) {
+  if (is.na(name)) {
+    return(col_character())
+  }
+
   get(paste0("col_", name), envir = asNamespace("readr"))()
 }
 
@@ -15,20 +25,19 @@ collector_find <- function(name) {
 #'
 #' @param x Character vector of elements to parse.
 #' @param collector Column specification.
+#' @inheritParams read_delim
 #' @keywords internal
 #' @export
 #' @examples
-#' x <- c("1", "2", "3", NA)
+#' x <- c("1", "2", "3", "NA")
 #' parse_vector(x, col_integer())
 #' parse_vector(x, col_double())
-#' parse_vector(x, col_character())
-#' parse_vector(x, col_skip())
-#'
-#' # Invalid values are replaced with missing values with a warning.
-#' x <- c("1", "2", "3", "-")
-#' parse_vector(x, col_double())
-parse_vector <- function(x, collector) {
-  warn_problems(parse_vector_(x, collector))
+parse_vector <- function(x, collector, na = c("", "NA"), locale = default_locale()) {
+  if (is.character(collector)) {
+    collector <- collector_find(collector)
+  }
+
+  warn_problems(parse_vector_(x, collector, na = na, locale_ = locale))
 }
 
 #' Parse character vectors into typed columns.
@@ -39,20 +48,32 @@ parse_vector <- function(x, collector) {
 #'
 #' @name collector
 #' @param x Character vector of values to parse.
+#' @inheritParams tokenizer_delim
+#' @inheritParams read_delim
 #' @seealso \code{\link{parse_datetime}}, \code{\link{type_convert}} to
 #'   automatically re-parse all character columns in a data frame.
 #' @examples
 #' parse_integer(c("1", "2", "3"))
 #' parse_double(c("1", "2", "3.123"))
-#' parse_euro_double(c("1", "2", "3,123"))
 #' parse_factor(c("a", "b"), letters)
-#' parse_numeric("$1,123,456.000")
+#' parse_number("$1,123,456.00")
 #'
-#' # If there are parsing problems, you'll get a warning message saying
-#' # how many. Use problems() to access a data frame giving more details.
-#' x <- parse_integer(c("1X", "blah", "3"))
-#' problems(x)
+#' # Use locale to override default decimal and grouping marks
+#' es_MX <- locale("es", decimal_mark = ",")
+#' parse_number("$1.123.456,00", locale = es_MX)
+#'
+#' # Invalid values are replaced with missing values with a warning.
+#' x <- c("1", "2", "3", "-")
+#' parse_double(x)
+#' # Or flag values as missing
+#' parse_double(x, na = "-")
 NULL
+
+#' @rdname collector
+#' @export
+parse_guess <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, collector_guess(x, locale), na = na, locale = locale)
+}
 
 #' @rdname collector
 #' @export
@@ -62,8 +83,8 @@ col_character <- function() {
 
 #' @rdname collector
 #' @export
-parse_character <- function(x) {
-  parse_vector(x, col_character())
+parse_character <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, col_character(), na = na, locale = locale)
 }
 
 #' @rdname collector
@@ -74,8 +95,8 @@ col_integer <- function() {
 
 #' @rdname collector
 #' @export
-parse_integer <- function(x) {
-  parse_vector(x, col_integer())
+parse_integer <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, col_integer(), na = na, locale = locale)
 }
 
 #' @rdname collector
@@ -86,33 +107,51 @@ col_double <- function() {
 
 #' @rdname collector
 #' @export
-parse_double <- function(x) {
-  parse_vector(x, col_double())
+parse_double <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, col_double(), na = na, locale = locale)
 }
 
 #' @rdname collector
 #' @export
 col_euro_double <- function() {
-  collector("euro_double")
+  warning("Deprecated: please set locale")
+  collector("double")
 }
 
 #' @rdname collector
 #' @export
-parse_euro_double <- function(x) {
-  parse_vector(x, col_euro_double())
+parse_euro_double <- function(x, na = c("", "NA")) {
+  warning("Deprecated: please set locale")
+  parse_vector(x, col_double(), na = na)
 }
 
 
 #' @rdname collector
+#' @usage NULL
 #' @export
 col_numeric <- function() {
-  collector("numeric")
+  warning("Deprecated: please use `col_number()`")
+  collector("number")
+}
+
+#' @rdname collector
+#' @usage NULL
+#' @export
+parse_numeric <- function(x, na = c("", "NA"), locale = default_locale()) {
+  warning("Deprecated: please use `parse_number()`")
+  parse_vector(x, col_number(), na = na, locale = locale)
 }
 
 #' @rdname collector
 #' @export
-parse_numeric <- function(x) {
-  parse_vector(x, col_numeric())
+col_number <- function() {
+  collector("number")
+}
+
+#' @rdname collector
+#' @export
+parse_number <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, col_number(), na = na, locale = locale)
 }
 
 #' @rdname collector
@@ -123,8 +162,8 @@ col_logical <- function() {
 
 #' @rdname collector
 #' @export
-parse_logical <- function(x) {
-  parse_vector(x, col_logical())
+parse_logical <- function(x, na = c("", "NA"), locale = default_locale()) {
+  parse_vector(x, col_logical(), na = na, locale = locale)
 }
 
 #' @param levels Character vector providing set of allowed levels.
@@ -137,14 +176,21 @@ col_factor <- function(levels, ordered = FALSE) {
 
 #' @rdname collector
 #' @export
-parse_factor <- function(x, levels, ordered = FALSE) {
-  parse_vector(x, col_factor(levels, ordered))
+parse_factor <- function(x, levels, ordered = FALSE, na = c("", "NA"),
+                         locale = default_locale()) {
+  parse_vector(x, col_factor(levels, ordered), na = na, locale = locale)
 }
 
 #' @rdname collector
 #' @export
 col_skip <- function() {
   collector("skip")
+}
+
+#' @rdname collector
+#' @export
+col_guess <- function() {
+  collector("guess")
 }
 
 # More complex ------------------------------------------------------------
@@ -175,8 +221,10 @@ col_skip <- function() {
 #'   \item Seconds: "\%S" (integer seconds), "\%OS" (partial seconds)
 #'   \item Time zone: "\%Z" (as name, e.g. "America/Chicago"), "\%z" (as
 #'     offset from UTC, e.g. "+0800")
-#'   \item Non-digits: "\%." skips one non-digit charcter, "\%*" skips any
-#'     number of non-digits characters.
+#'   \item AM/PM indicator: "\%p".
+#'   \item Non-digits: "\%." skips one non-digit character,
+#'     "\%+" skips one or more non-digit characters,
+#'     "\%*" skips any number of non-digits characters.
 #'   \item Shortcuts: "\%D" = "\%m/\%d/\%y",  "\%F" = "\%Y-\%m-\%d",
 #'       "\%R" = "\%H:\%M", "\%T" = "\%H:\%M:\%S",  "\%x" = "\%y/\%m/\%d".
 #' }
@@ -201,24 +249,12 @@ col_skip <- function() {
 #' @param x A character vector of dates to parse.
 #' @param format A format specification, as described below. If omitted,
 #'   parses dates according to the ISO8601 specification (with caveats,
-#'   as described below).
+#'   as described below). Times are parsed like ISO8601 times, but also
+#'   accept an optional am/pm specification.
 #'
 #'   Unlike \code{\link{strptime}}, the format specification must match
 #'   the complete string.
-#' @param tz Default tz. This is used both for input (if the time zone isn't
-#'   present in individual strings), and for output (to control the default
-#'   display). The default is to use "UTC", a time zone that does not use
-#'   daylight savings time (DST) and hence is typically most useful for data.
-#'   The absense of time zones makes it approximately 50x faster to generate
-#'   UTC times than any other time zone.
-#'
-#'   Use \code{""} to use the system default time zone, but beware that this
-#'   will not be reproducible across systems.
-#'
-#'   For a complete list of possible time zones, see \code{\link{OlsonNames}()}.
-#'   Americans, note that "EST" is a Canadian time zone that does not have
-#'   DST. It is \emph{not} Eastern Standard Time. It's better to use
-#'   "US/Eastern", "US/Central" etc.
+#' @inheritParams read_delim
 #' @return A \code{\link{POSIXct}} vector with \code{tzone} attribute set to
 #'   \code{tz}. Elements that could not be parsed (or did not generate valid
 #'   dates) will bes set to \code{NA}, and a warning message will inform
@@ -242,10 +278,12 @@ col_skip <- function() {
 #' # Or from offsets
 #' parse_datetime("2010/01/01 12:00 -0600", "%Y/%m/%d %H:%M %z")
 #'
-#' # Use the tz parameter to control the default time zone
+#' # Use the locale parameter to control the default time zone
 #' # (but note UTC is considerably faster than other options)
-#' parse_datetime("2010/01/01 12:00", "%Y/%m/%d %H:%M", tz = "US/Central")
-#' parse_datetime("2010/01/01 12:00", "%Y/%m/%d %H:%M", tz = "US/Eastern")
+#' parse_datetime("2010/01/01 12:00", "%Y/%m/%d %H:%M",
+#'   locale = locale(tz = "US/Central"))
+#' parse_datetime("2010/01/01 12:00", "%Y/%m/%d %H:%M",
+#'   locale = locale(tz = "US/Eastern"))
 #'
 #' # Unlike strptime, the format specification must match the complete
 #' # string (ignoring leading and trailing whitespace). This avoids common
@@ -255,8 +293,12 @@ col_skip <- function() {
 #'
 #' # Failures -------------------------------------------------------------
 #' parse_datetime("01/01/2010", "%d/%m/%Y")
-#' x <- parse_datetime(c("01/ab/2010", "32/01/2010"), "%d/%m/%Y")
-#' problems(x)
+#' parse_datetime(c("01/ab/2010", "32/01/2010"), "%d/%m/%Y")
+#'
+#' # Locales --------------------------------------------------------------
+#' # By default, readr expects English date/times, but that's easy to change'
+#' parse_datetime("1 janvier 2015", "%d %B %Y", locale = locale("fr"))
+#' parse_datetime("1 enero 2015", "%d %B %Y", locale = locale("es"))
 #'
 #' # ISO8601 --------------------------------------------------------------
 #' # With separators
@@ -271,27 +313,42 @@ col_skip <- function() {
 #' parse_datetime("19791014T101112")
 #'
 #' # Time zones
-#' parse_datetime("1979-10-14T1010", tz = "US/Central")
-#' parse_datetime("1979-10-14T1010-0500", tz = "US/Central")
-#' parse_datetime("1979-10-14T1010Z", tz = "US/Central")
-parse_datetime <- function(x, format = "", tz = "UTC") {
-  parse_vector(x, col_datetime(format, tz))
+#' us_central <- locale(tz = "US/Central")
+#' parse_datetime("1979-10-14T1010", locale = us_central)
+#' parse_datetime("1979-10-14T1010-0500", locale = us_central)
+#' parse_datetime("1979-10-14T1010Z", locale = us_central)
+#' # Your current time zone
+#' parse_datetime("1979-10-14T1010", locale = locale(tz = ""))
+parse_datetime <- function(x, format = "", locale = default_locale()) {
+  parse_vector(x, col_datetime(format), locale = locale)
 }
 
 #' @rdname parse_datetime
 #' @export
-col_datetime <- function(format = "", tz = "UTC") {
-  collector("datetime", format = format, tz = tz)
+col_datetime <- function(format = "") {
+  collector("datetime", format = format)
 }
 
 #' @rdname parse_datetime
 #' @export
-parse_date <- function(x, format = "%Y-%m-%d") {
-  parse_vector(x, col_date(format))
+parse_date <- function(x, format = "%Y-%m-%d", locale = default_locale()) {
+  parse_vector(x, col_date(format), locale = locale)
 }
 
 #' @rdname parse_datetime
 #' @export
-col_date <- function(format = "%Y-%m-%d") {
+col_date <- function(format = NULL) {
   collector("date", format = format)
+}
+
+#' @rdname parse_datetime
+#' @export
+parse_time <- function(x, format = "", locale = default_locale()) {
+  parse_vector(x, col_time(format), locale = locale)
+}
+
+#' @rdname parse_datetime
+#' @export
+col_time <- function(format = "") {
+  collector("time", format = format)
 }

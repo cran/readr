@@ -6,7 +6,8 @@
 #'    Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
 #'    be automatically uncompressed. Files starting with \code{http://},
 #'    \code{https://}, \code{ftp://}, or \code{ftps://} will be automatically
-#'    downloaded.
+#'    downloaded. Remote gz files can also be automatically downloaded &
+#'    decompressed.
 #'
 #'    Literal data is most useful for examples and tests. It must contain at
 #'    least one new line to be recognised as data (instead of a path).
@@ -26,22 +27,22 @@
 #'
 #' # Connection
 #' datasource(rawConnection(charToRaw("abc\n123")))
-datasource <- function(file, skip = 0) {
+datasource <- function(file, skip = 0, comment = "") {
   if (inherits(file, "source")) {
     file
   } else if (is.connection(file)) {
-    datasource_connection(file, skip)
+    datasource_connection(file, skip, comment)
   } else if (is.raw(file)) {
-    datasource_raw(file, skip)
+    datasource_raw(file, skip, comment)
   } else if (is.character(file)) {
     if (grepl("\n", file)) {
-      datasource_string(file, skip)
+      datasource_string(file, skip, comment)
     } else {
       file <- standardise_path(file)
       if (is.connection(file)) {
-        datasource_connection(file, skip)
+        datasource_connection(file, skip, comment)
       } else {
-        datasource_file(file, skip)
+        datasource_file(file, skip, comment)
       }
     }
   } else {
@@ -51,26 +52,26 @@ datasource <- function(file, skip = 0) {
 
 # Constructors -----------------------------------------------------------------
 
-new_datasource <- function(type, x, skip, ...) {
-  structure(list(x, skip = skip, ...),
+new_datasource <- function(type, x, skip, comment = "", ...) {
+  structure(list(x, skip = skip, comment = comment, ...),
     class = c(paste0("source_", type), "source"))
 }
 
-datasource_string <- function(text, skip) {
-  new_datasource("string", text, skip = skip)
+datasource_string <- function(text, skip, comment = "") {
+  new_datasource("string", text, skip = skip, comment = comment)
 }
 
-datasource_file <- function(path, skip) {
+datasource_file <- function(path, skip, comment = "") {
   path <- check_path(path)
-  new_datasource("file", path, skip = skip)
+  new_datasource("file", path, skip = skip, comment = comment)
 }
 
-datasource_connection <- function(path, skip) {
-  datasource_raw(read_connection(path), skip)
+datasource_connection <- function(path, skip, comment = "") {
+  datasource_raw(read_connection(path), skip, comment = comment)
 }
 
-datasource_raw <- function(text, skip) {
-  new_datasource("raw", text, skip = skip)
+datasource_raw <- function(text, skip, comment) {
+  new_datasource("raw", text, skip = skip, comment = comment)
 }
 
 # Helpers ----------------------------------------------------------------------
@@ -93,8 +94,13 @@ standardise_path <- function(path) {
   if (grepl("\n", path))
     return(path)
 
-  if (is_url(path))
-    return(curl::curl(path))
+  if (is_url(path)) {
+    if (identical(tools::file_ext(path), "gz")) {
+      return(gzcon(curl::curl(path)))
+    } else {
+      return(curl::curl(path))
+    }
+  }
 
   path <- check_path(path)
   switch(tools::file_ext(path),

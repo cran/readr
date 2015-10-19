@@ -1,6 +1,8 @@
 # readr
 
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/readr)](http://cran.r-project.org/package=readr)
 [![Build Status](https://travis-ci.org/hadley/readr.png?branch=master)](https://travis-ci.org/hadley/readr)
+[![Coverage Status](http://codecov.io/github/hadley/readr/coverage.svg?branch=master)](http://codecov.io/github/hadley/readr?branch=master)
 
 The goal of readr is to provide a fast and friendly way to read tabular data into R. The most important functions are:
 
@@ -12,8 +14,12 @@ The goal of readr is to provide a fast and friendly way to read tabular data int
 
 ## Installation
 
-Currently, readr is not available from CRAN, but you can try out the dev version with:
+readr is now available from CRAN.
+``` r
+install.packages("readr")
+```
 
+You can try out the dev version with:
 ```R
 # install.packages("devtools")
 devtools::install_github("hadley/readr")
@@ -36,57 +42,7 @@ read_lines(mtcars_path)
 read_file(mtcars_path)
 ```
 
-## Column types
-
-Currently, readr automatically recognises the following types of columns:
-
-* `col_logical()` [l], containing only `T`, `F`, `TRUE` or `FALSE`.
-* `col_integer()` [i], integers.
-* `col_double()` [d], doubles.
-* `col_euro_double()` [e], "Euro" doubles that use `,` as decimal separator.
-* `col_character()` [c], everything else.
-* `col_date(format = "")` [D]: Y-m-d dates.
-* `col_datetime(format = "", tz = "UTC")` [T]: ISO8601 date times
-
-To recognise these columns, it reads the first 100 rows of your dataset. This is not guaranteed to be perfect, but it's fast and a reasonable heuristic. If you get a lot of parsing failures, you'll need to re-read the file, overriding the default choices as described below.
-
-You can also manually specify other column types:
-
-* `col_skip()` [_], don't import this column.
-* `col_datetime(date)`, dates with given format.
-* `col_datetime(format, tz)`, date times with given format. If the timezone
-  is UTC, this is >20x faster than loading then parsing with `strptime()`.
-* `col_numeric()` [n], a sloppy numeric parser that ignores everything apart from
-   0-9, `-` and `.` (this is useful for parsing data formatted as currencies).
-* `col_factor(levels, ordered)`, parse a fixed set of known values into a 
-  factor
-
-Use the `col_types` argument to override the default choices. There are two ways to use it:
-
-* With a string: `"dc__d"`: read first column as double, second as character,
-  skip the next two and read the last column as a double. (There's no way to
-  use this form with types that need parameters like date time and factor.)
-
-* With a (named) list of col objects:
-
-    ```R
-    read_csv("iris.csv", col_types = list(
-      Sepal.Length = col_double(),
-      Sepal.Width = col_double(),
-      Petal.Length = col_double(),
-      Petal.Width = col_double(),
-      Species = col_factor(c("setosa", "versicolor", "virginica"))
-    ))
-    ```
-    
-    Any omitted columns will be parsed automatically, so the previous call is 
-    equivalent to:
-    
-    ```R
-    read_csv("iris.csv", col_types = list(
-      Species = col_factor(c("setosa", "versicolor", "virginica"))
-    )
-    ```
+See `vignette("column-types")` on how readr parses columns, and how you can override the defaults.
 
 ## Output
 
@@ -132,6 +88,9 @@ Compared to the corresponding base functions, readr functions:
 * Are much faster (up to 10x faster).
 
 * Have a helpful progress bar if loading is going to take a while.
+
+* All functions work exactly the same way regardless of the current locale.
+  To override the US-centric defaults, use `locale()`.
 
 ## Compared to `fread()`
 
