@@ -1,4 +1,4 @@
-085ede12ce9f1ed3c32d79ee468b8316 *DESCRIPTION
+5b7ae11b76da58ac9383634686e8ebd6 *DESCRIPTION
 b234ee4d69f5fce4486a80fdaf4a4263 *LICENSE
 49c84da5320c848f1e9609994a599dc2 *NAMESPACE
 4d8cd06e6accb7e97c45d9f1ec38b95d *R/POSIXct.R
@@ -7,7 +7,7 @@ ceb26c2553111830a352379773458b82 *R/RcppExports.R
 472711acb29038e5a820bb365615f5fd *R/collectors.R
 7db31111fb844be9e90d8a35da3787ad *R/count_fields.R
 42356f01d64ff9a1e3921f2aab0c49ba *R/date-symbols.R
-ae3da85d17171b8418e8cbbe46a96b11 *R/encoding.R
+1e4d4890756d103b9aabf588e8d7eb92 *R/encoding.R
 3002cf94c0ffe74154cd371d0cd0ddba *R/input.R
 50783e126b7589aaa36a5f19b1a8d70c *R/locale.R
 9573a03e83fa7dc76a3f6aeaffaeee3e *R/problems.R
@@ -28,10 +28,10 @@ ac7338f3dde34db6a77b64544fe8455d *R/utils.R
 c864a158493933bcfa74690632df5af0 *build/vignette.rds
 68815b1bb7adc44823dd4886b26ee444 *inst/doc/column-types.R
 94fbd8447217969405aaa410e6984680 *inst/doc/column-types.Rmd
-bfe6f59dac71d0745f8fb08d921d98cc *inst/doc/column-types.html
+17598a844e8184c7a14a05378aad925a *inst/doc/column-types.html
 129044061b0f500657bcea57c29ed2a7 *inst/doc/locales.R
 079dd1922d4ce1e0a4511cce0e94b0c6 *inst/doc/locales.Rmd
-9a0f31d2f6bb325ee9fd7deeb8441e13 *inst/doc/locales.html
+d3bd199d8e683cad9e652bf36dba4aae *inst/doc/locales.html
 6c866491adbfc86d9bc1d6679d6ccef9 *inst/extdata/compound.log
 fa584bf0652806be23f04c9938ec0ec8 *inst/extdata/epa78.txt
 9dc92f35a3293d75ce989e1e694a57c7 *inst/extdata/example.log
@@ -46,7 +46,7 @@ c38c2ea7ebcf26f8713a21998819bbcb *man/cols.Rd
 548fd9c73adb64f5127adf333c98df12 *man/count_fields.Rd
 48764474eb3c41fb2a5db1836c153fd8 *man/datasource.Rd
 980500bb864c57110adaad4441437545 *man/date_names.Rd
-696fa6c3355e6fcf2ff73c63a1fc13ae *man/encoding.Rd
+a06b4eff64c9bc70de8cbc80b8bbecd5 *man/encoding.Rd
 0a2fba3f68e49b9ae79c0c67ca2af74d *man/locale.Rd
 bb8a0a04260e7763f091e24d212d5d31 *man/parse_datetime.Rd
 1f9399a1bb6fb13c77e2e12496bd7436 *man/parse_vector.Rd
@@ -62,13 +62,13 @@ f9ed57d0e6672000754d3db3c6f36d67 *man/read_rds.Rd
 dcfa751152ad63931146109e0d30f56f *man/type_convert.Rd
 552b407c6576e343d6674ba87d203300 *man/write_delim.Rd
 963833327ba2273a84a3d29c2bbe1bd8 *man/write_rds.Rd
-0d88e9dbeedf96727878e58f6d30b87e *src/Collector.cpp
+428dcab5d2763424f82f4797802ae515 *src/Collector.cpp
 f908522baeec2fcb1268a7a7bf11ca97 *src/Collector.h
 971dd298f6ae6d9e21f13967d3bd866a *src/CollectorGuess.cpp
 ddaa76b8a82daabcb374f62c03a5b74a *src/DateTime.cpp
 36fad8cd8a1ae08efc9d1773dc935317 *src/DateTime.h
 52c894f7a18600f81be3ed2b29e9ad9c *src/DateTimeParser.h
-4fea29600228fb2f6cbd23c04b7f8ad9 *src/Iconv.cpp
+b7edc2ff177cd82125ff43caf63c71f7 *src/Iconv.cpp
 f479885778600c5503db5ecdfa54ca0d *src/Iconv.h
 a74578a9b68c235d95f6509a7eb8f9ad *src/LocaleInfo.cpp
 d7a9446da671b6ef37721623cb89bc4e *src/LocaleInfo.h
@@ -93,7 +93,7 @@ de8b1e6f015fb58e454f44dd86a0d490 *src/TokenizerLog.h
 4fbcb77249ff44250eeef770d01a0015 *src/Warnings.h
 e7851f437085853620a9b7bdc2c89dea *src/boost.h
 be2c92c3d2a0fb1ded1b2bc32a737fa4 *src/connection.cpp
-7f5982fd6b8655b12f565a1b8ad069ec *src/localtime.c
+21a93611038610fca720c9573f464f43 *src/localtime.c
 fa6a0141e4e6563c551ba4c5b1f2497d *src/localtime.h
 1f3c9bea42283d19dfc306c77771efd4 *src/parse.cpp
 52a052cca5fc43fd2b5625f89b15797e *src/read.cpp
