@@ -1,4 +1,4 @@
-5b7ae11b76da58ac9383634686e8ebd6 *DESCRIPTION
+f7d6e21dd9826f1cb63caae23931ad29 *DESCRIPTION
 b234ee4d69f5fce4486a80fdaf4a4263 *LICENSE
 49c84da5320c848f1e9609994a599dc2 *NAMESPACE
 4d8cd06e6accb7e97c45d9f1ec38b95d *R/POSIXct.R
@@ -28,10 +28,10 @@ ac7338f3dde34db6a77b64544fe8455d *R/utils.R
 c864a158493933bcfa74690632df5af0 *build/vignette.rds
 68815b1bb7adc44823dd4886b26ee444 *inst/doc/column-types.R
 94fbd8447217969405aaa410e6984680 *inst/doc/column-types.Rmd
-17598a844e8184c7a14a05378aad925a *inst/doc/column-types.html
+a9849778fa4fdabe65ec3bf10230d93d *inst/doc/column-types.html
 129044061b0f500657bcea57c29ed2a7 *inst/doc/locales.R
 079dd1922d4ce1e0a4511cce0e94b0c6 *inst/doc/locales.Rmd
-d3bd199d8e683cad9e652bf36dba4aae *inst/doc/locales.html
+021e5d0a0ca08776e02d000651a9c2ff *inst/doc/locales.html
 6c866491adbfc86d9bc1d6679d6ccef9 *inst/extdata/compound.log
 fa584bf0652806be23f04c9938ec0ec8 *inst/extdata/epa78.txt
 9dc92f35a3293d75ce989e1e694a57c7 *inst/extdata/example.log
@@ -74,7 +74,7 @@ a74578a9b68c235d95f6509a7eb8f9ad *src/LocaleInfo.cpp
 d7a9446da671b6ef37721623cb89bc4e *src/LocaleInfo.h
 ea5c667e6402d3cc2c14d6ff9753b910 *src/Makevars.win
 144337a3bd2c3bd8a1e61eea3ec61549 *src/Progress.h
-1a993628d8bdb27b03b9474641bfb396 *src/QiParsers.h
+1866f524555a375e3e597a73fb3dba5e *src/QiParsers.h
 58ffed86824e458689fbc2dbfda710c4 *src/RcppExports.cpp
 cfca8264d163024ba7c5b31110311838 *src/Source.cpp
 50e10e7ad7c2d0bd73d1dc1a91888d4b *src/Source.h
@@ -84,8 +84,8 @@ c16d5e2822eca82855d23632b74a4a55 *src/SourceRaw.h
 aa7ce6d8c30625c11ec1e0aa3b3b1190 *src/Token.h
 04a26d00af4a30b45ee1b1490facf8dd *src/Tokenizer.cpp
 d87374701e3aa1498fb5fef4f57bb3b8 *src/Tokenizer.h
-6a8fcd5ea8820cf4d4001b8d87ab5f8d *src/TokenizerDelim.cpp
-d8dff6f61e00f46770047ea17a800759 *src/TokenizerDelim.h
+4f8dcaeab342fe140f6cd7d8642f62be *src/TokenizerDelim.cpp
+5b8b3f8efea7c2725e6b12968da623ff *src/TokenizerDelim.h
 fd7a674d9e55f9346cd3692e8645a43f *src/TokenizerFwf.cpp
 63dcab870ad1f16f24368a4dcdfbaf78 *src/TokenizerFwf.h
 405b4bf976a61b52b1620ee9a670ccbe *src/TokenizerLine.h
@@ -95,8 +95,8 @@ e7851f437085853620a9b7bdc2c89dea *src/boost.h
 be2c92c3d2a0fb1ded1b2bc32a737fa4 *src/connection.cpp
 21a93611038610fca720c9573f464f43 *src/localtime.c
 fa6a0141e4e6563c551ba4c5b1f2497d *src/localtime.h
-1f3c9bea42283d19dfc306c77771efd4 *src/parse.cpp
-52a052cca5fc43fd2b5625f89b15797e *src/read.cpp
+f1aed11668217d1ef6b1468bea95de1b *src/parse.cpp
+e2b690a75b6a930d64a26d4e96af156a *src/read.cpp
 e9e43bb954168c4b9c4a8116f3d4576e *src/type_convert.cpp
 e9f09c7e1def0cbc8caf715c2fa28f5c *src/tzfile.h
 2cbcee2ab202a4038fe255b8acab5952 *src/utils.h
