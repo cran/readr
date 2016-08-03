@@ -13,45 +13,62 @@
 #' @inheritParams read_delim
 #' @param col_positions Column positions, as created by \code{fwf_empty},
 #'   \code{fwf_widths} or \code{fwf_positions}. To read in only selected fields,
-#'   use \code{fwf_positions}. The width of the last column will be silently
-#'   extended to the next line break.
+#'   use \code{fwf_positions}. If the width of the last column is variable (a
+#'   ragged fwf file), supply the last end position as NA.
 #' @export
 #' @examples
-#' fwf_sample <- system.file("extdata/fwf-sample.txt", package = "readr")
+#' fwf_sample <- readr_example("fwf-sample.txt")
 #' cat(read_lines(fwf_sample))
 #'
 #' # You can specify column positions in three ways:
 #' # 1. Guess based on position of empty columns
-#' read_fwf(fwf_sample, fwf_empty(fwf_sample))
+#' read_fwf(fwf_sample, fwf_empty(fwf_sample, col_names = c("first", "last", "state", "ssn")))
 #' # 2. A vector of field widths
-#' read_fwf(fwf_sample, fwf_widths(c(2, 5, 3)))
+#' read_fwf(fwf_sample, fwf_widths(c(20, 10, 12), c("name", "state", "ssn")))
 #' # 3. Paired vectors of start and end positions
-#' read_fwf(fwf_sample, fwf_positions(c(1, 4), c(2, 10)))
+#' read_fwf(fwf_sample, fwf_positions(c(1, 30), c(10, 42), c("name", "ssn")))
 read_fwf <- function(file, col_positions, col_types = NULL,
                      locale = default_locale(), na = c("", "NA"),
-                     skip = 0, n_max = -1, progress = interactive()) {
+                     comment = "", skip = 0, n_max = Inf,
+                     guess_max = min(n_max, 1000), progress = interactive()) {
   ds <- datasource(file, skip = skip)
-  tokenizer <- tokenizer_fwf(col_positions$begin, col_positions$end, na = na)
 
-  col_types <- col_spec_standardise(
-    file, skip = skip, n_max = n_max,
-    tokenizer = tokenizer, locale = locale,
-    col_names = col_positions$col_names, col_types = col_types
+  if (inherits(ds, "source_file") && empty_file(file)) {
+    return(tibble::data_frame())
+  }
+
+  tokenizer <- tokenizer_fwf(col_positions$begin, col_positions$end, na = na, comment = comment)
+
+  spec <- col_spec_standardise(
+    file,
+    skip = skip,
+    n = guess_max,
+    tokenizer = tokenizer,
+    locale = locale,
+    col_names = col_positions$col_names,
+    col_types = col_types,
+    drop_skipped_names = TRUE
   )
 
-  out <- read_tokens(ds, tokenizer, col_types, names(col_types),
-    locale_ = locale, n_max = n_max, progress = progress)
+  if (is.null(col_types) && !inherits(ds, "source_string")) {
+    show_cols_spec(spec)
+  }
+
+  out <- read_tokens(ds, tokenizer, spec$cols, names(spec$cols),
+    locale_ = locale, n_max = if (n_max == Inf) -1 else n_max, progress = progress)
 
   out <- name_problems(out)
+  attr(out, "spec") <- spec
   warn_problems(out, source_name(file))
 }
 
 #' @rdname read_fwf
 #' @export
-fwf_empty <- function(file, skip = 0, col_names = NULL) {
+fwf_empty <- function(file, skip = 0, col_names = NULL, comment = "") {
   ds <- datasource(file, skip = skip)
 
-  out <- whitespaceColumns(ds)
+  out <- whitespaceColumns(ds, comment = comment)
+  out$end[length(out$end)] <- NA
 
   if (is.null(col_names)) {
     col_names <- paste0("X", seq_along(out$begin))
@@ -65,10 +82,11 @@ fwf_empty <- function(file, skip = 0, col_names = NULL) {
 
 #' @rdname read_fwf
 #' @export
-#' @param widths Width of each field.
+#' @param widths Width of each field. Use NA as width of last field when
+#'    reading a ragged fwf file.
 #' @param col_names Either NULL, or a character vector column names.
 fwf_widths <- function(widths, col_names = NULL) {
-  pos <- cumsum(c(1, widths))
+  pos <- cumsum(c(1, abs(widths)))
 
   fwf_positions(pos[-length(pos)], pos[-1] - 1, col_names)
 }
@@ -76,7 +94,9 @@ fwf_widths <- function(widths, col_names = NULL) {
 #' @rdname read_fwf
 #' @export
 #' @param start,end Starting and ending (inclusive) positions of each field.
+#'    Use NA as last end field when reading a ragged fwf file.
 fwf_positions <- function(start, end, col_names = NULL) {
+
   stopifnot(length(start) == length(end))
 
   if (is.null(col_names)) {
@@ -91,4 +111,3 @@ fwf_positions <- function(start, end, col_names = NULL) {
     col_names = col_names
   )
 }
-

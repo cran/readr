@@ -6,7 +6,7 @@ using namespace Rcpp;
 TokenizerDelim::TokenizerDelim(char delim, char quote,
   std::vector<std::string> NA, std::string comment,
   bool trimWS, bool escapeBackslash,
-  bool escapeDouble):
+  bool escapeDouble, bool quotedNA):
     delim_(delim),
     quote_(quote),
     NA_(NA),
@@ -15,6 +15,7 @@ TokenizerDelim::TokenizerDelim(char delim, char quote,
     trimWS_(trimWS),
     escapeBackslash_(escapeBackslash),
     escapeDouble_(escapeDouble),
+    quotedNA_(quotedNA),
     hasEmptyNA_(false),
     moreTokens_(false)
 {
@@ -66,8 +67,12 @@ Token TokenizerDelim::nextToken() {
     switch(state_) {
     case STATE_DELIM:
       if (*cur_ == '\r' || *cur_ == '\n') {
+        if (col_ == 0) {
+          advanceForLF(&cur_, end_);
+          token_begin = cur_ + 1;
+          break;
+        }
         newRecord();
-        advanceForLF(&cur_, end_);
         return emptyToken(row, col);
       } else if (isComment(cur_)) {
         state_ = STATE_COMMENT;
@@ -88,6 +93,7 @@ Token TokenizerDelim::nextToken() {
         newRecord();
         return fieldToken(token_begin, advanceForLF(&cur_, end_), hasEscapeB, hasNull, row, col);
       } else if (isComment(cur_)) {
+        newField();
         state_ = STATE_COMMENT;
         return fieldToken(token_begin, cur_, hasEscapeB, hasNull, row, col);
       } else if (escapeBackslash_ && *cur_ == '\\') {
@@ -110,15 +116,15 @@ Token TokenizerDelim::nextToken() {
       } else if (*cur_ == '\r' || *cur_ == '\n') {
         newRecord();
         return stringToken(token_begin + 1, advanceForLF(&cur_, end_) - 1,
-          hasEscapeB, hasEscapeD, hasNull, row, col);
+            hasEscapeB, hasEscapeD, hasNull, row, col);
       } else if (isComment(cur_)) {
         state_ = STATE_COMMENT;
         return stringToken(token_begin + 1, cur_ - 1,
-          hasEscapeB, hasEscapeD, hasNull, row, col);
+            hasEscapeB, hasEscapeD, hasNull, row, col);
       } else if (*cur_ == delim_) {
         newField();
         return stringToken(token_begin + 1, cur_ - 1,
-          hasEscapeB, hasEscapeD, hasNull, row, col);
+            hasEscapeB, hasEscapeD, hasNull, row, col);
       } else {
         warn(row, col, "delimiter or quote", std::string(cur_, cur_ + 1));
         state_ = STATE_STRING;
@@ -160,9 +166,17 @@ Token TokenizerDelim::nextToken() {
 
     case STATE_COMMENT:
       if (*cur_ == '\r' || *cur_ == '\n') {
+
+        // If we have read at least one record on the current row go to the
+        // next row, line, otherwise just ignore the line.
+        if (col_ > 0) {
+          row_++; row++;
+          col_ = 0;
+        }
+        col = 0;
         advanceForLF(&cur_, end_);
-        state_ = STATE_DELIM;
         token_begin = cur_ + 1;
+        state_ = STATE_DELIM;
       }
 
       break;
@@ -242,6 +256,8 @@ Token TokenizerDelim::stringToken(SourceIterator begin, SourceIterator end,
   Token t(begin, end, row, col, hasNull, (hasEscapeD || hasEscapeB) ? this : NULL);
   if (trimWS_)
     t.trim();
+  if (quotedNA_)
+    t.flagNA(NA_);
   return t;
 }
 

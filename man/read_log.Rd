@@ -29,9 +29,13 @@ read_log(file, col_names = FALSE, col_types = NULL, skip = 0,
 
   If \code{col_names} is a character vector, the values will be used as the
   names of the columns, and the first row of the input will be read into
-  the first row of the output data frame.}
+  the first row of the output data frame.
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}}, specification of
+  Missing (\code{NA}) column names will generate a warning, and be filled
+  in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
+  will generate a warning and be made unique with a numeric prefix.}
+
+\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
   a string. See \code{vignette("column-types")} for more details.
 
   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -39,7 +43,7 @@ read_log(file, col_names = FALSE, col_types = NULL, skip = 0,
   imputation fails, you'll need to supply the correct types yourself.
 
   If a column specification created by \code{\link{cols}}, it must contain
-  one "\code{\link{collector}}" for each column. If you only want to read a
+  one column specification for each column. If you only want to read a
   subset of the columns, use \code{\link{cols_only}}.
 
   Alternatively, you can use a compact string representation where each
@@ -62,6 +66,6 @@ and square brackets for quoting, and there may be literal quotes embedded
 in a quoted string. The dash, "-", is used for missing values.
 }
 \examples{
-read_log(system.file("extdata/example.log", package = "readr"))
+read_log(readr_example("example.log"))
 }
 

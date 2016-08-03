@@ -2,10 +2,16 @@
 % Please edit documentation in R/read_table.R
 \name{read_table}
 \alias{read_table}
+\alias{spec_table}
 \title{Read text file where columns are separated by whitespace.}
 \usage{
 read_table(file, col_names = TRUE, col_types = NULL,
-  locale = default_locale(), na = "NA", skip = 0, n_max = -1)
+  locale = default_locale(), na = "NA", skip = 0, n_max = Inf,
+  guess_max = min(n_max, 1000), progress = interactive())
+
+spec_table(file, col_names = TRUE, col_types = NULL,
+  locale = default_locale(), na = "NA", skip = 0, n_max = 0,
+  guess_max = 1000, progress = interactive())
 }
 \arguments{
 \item{file}{Either a path to a file, a connection, or literal data
@@ -29,9 +35,13 @@ read_table(file, col_names = TRUE, col_types = NULL,
 
   If \code{col_names} is a character vector, the values will be used as the
   names of the columns, and the first row of the input will be read into
-  the first row of the output data frame.}
+  the first row of the output data frame.
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}}, specification of
+  Missing (\code{NA}) column names will generate a warning, and be filled
+  in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
+  will generate a warning and be made unique with a numeric prefix.}
+
+\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
   a string. See \code{vignette("column-types")} for more details.
 
   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -39,7 +49,7 @@ read_table(file, col_names = TRUE, col_types = NULL,
   imputation fails, you'll need to supply the correct types yourself.
 
   If a column specification created by \code{\link{cols}}, it must contain
-  one "\code{\link{collector}}" for each column. If you only want to read a
+  one column specification for each column. If you only want to read a
   subset of the columns, use \code{\link{cols_only}}.
 
   Alternatively, you can use a compact string representation where each
@@ -60,6 +70,12 @@ option to \code{character()} to indicate no missing values.}
 \item{skip}{Number of lines to skip before reading data.}
 
 \item{n_max}{Maximum number of records to read.}
+
+\item{guess_max}{Maximum number of records to use for guessing column types.}
+
+\item{progress}{Display a progress bar? By default it will only display
+in an interactive session. The display is updated every 50,000 values
+and will only display if estimated reading time is 5 seconds or more.}
 }
 \description{
 This is designed to read the type of textual data where each column is
@@ -67,17 +83,18 @@ separate by one (or more) columns of space. Each line is the same length,
 and each field is in the same position in every line. It's similar to
 \code{\link{read.table}}, but rather parsing like a file delimited by
 arbitrary amounts of whitespace, it first finds empty columns and then
-parses like a fixed width file.
+parses like a fixed width file. \code{spec_table} returns the column
+specification rather than a data frame.
 }
 \examples{
 # One corner from http://www.masseyratings.com/cf/compare.htm
-massey <- system.file("extdata/massey-rating.txt", package = "readr")
+massey <- readr_example("massey-rating.txt")
 cat(read_file(massey))
 read_table(massey)
 
 # Sample of 1978 fuel economy data from
 # http://www.fueleconomy.gov/feg/epadata/78data.zip
-epa <- system.file("extdata/epa78.txt", package = "readr")
+epa <- readr_example("epa78.txt")
 cat(read_file(epa))
 read_table(epa, col_names = FALSE)
 }

@@ -69,11 +69,18 @@ bool isDouble(const std::string& x, LocaleInfo* pLocale) {
   return parseDouble(pLocale->decimalMark_, begin, end, res) && begin == end;
 }
 
+bool isTime(const std::string& x, LocaleInfo* pLocale) {
+  DateTimeParser parser(pLocale);
+
+  parser.setDate(x.c_str());
+  return parser.parseLocaleTime();
+}
+
 bool isDate(const std::string& x, LocaleInfo* pLocale) {
   DateTimeParser parser(pLocale);
 
   parser.setDate(x.c_str());
-  return parser.parse(pLocale->dateFormat_);
+  return parser.parseLocaleDate();
 }
 
 static bool isDateTime(const std::string& x, LocaleInfo* pLocale) {
@@ -108,6 +115,8 @@ std::string collectorGuess(CharacterVector input, List locale_) {
     return "double";
   if (canParse(input, isNumber, &locale))
     return "number";
+  if (canParse(input, isTime, &locale))
+    return "time";
   if (canParse(input, isDate, &locale))
     return "date";
   if (canParse(input, isDateTime, &locale))

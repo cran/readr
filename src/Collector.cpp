@@ -45,22 +45,14 @@ CollectorPtr Collector::create(List spec, LocaleInfo* pLocale) {
 }
 
 std::vector<CollectorPtr> collectorsCreate(ListOf<List> specs,
-                                           LocaleInfo* pLocale,
-                                           Warnings* pWarning) {
+                                           LocaleInfo* pLocale) {
   std::vector<CollectorPtr> collectors;
   for (int j = 0; j < specs.size(); ++j) {
     CollectorPtr col = Collector::create(specs[j], pLocale);
-    col->setWarnings(pWarning);
     collectors.push_back(col);
   }
 
   return collectors;
-}
-
-void collectorsResize(std::vector<CollectorPtr>& collectors, int n) {
-  for (size_t j = 0; j < collectors.size(); ++j) {
-    collectors[j]->resize(n);
-  }
 }
 
 // Implementations ------------------------------------------------------------
@@ -88,6 +80,10 @@ void CollectorCharacter::setValue(int i, const Token& t) {
   }
 }
 
+void CollectorCharacter::setValue(int i, const std::string& s) {
+  SET_STRING_ELT(column_, i, Rf_mkCharCE(s.c_str(), CE_UTF8));
+}
+
 void CollectorDate::setValue(int i, const Token& t) {
   switch(t.type()) {
   case TOKEN_STRING: {
@@ -96,27 +92,26 @@ void CollectorDate::setValue(int i, const Token& t) {
     std::string std_string(string.first, string.second);
 
     parser_.setDate(std_string.c_str());
-    bool res = (format_ == "") ? parser_.parseISO8601()
-      : parser_.parse(format_);
+    bool res = (format_ == "") ? parser_.parseLocaleDate() : parser_.parse(format_);
 
     if (!res) {
       warn(t.row(), t.col(), "date like " +  format_, std_string);
-      INTEGER(column_)[i] = NA_INTEGER;
+      REAL(column_)[i] = NA_REAL;
       return;
     }
 
     DateTime dt = parser_.makeDate();
     if (!dt.validDate()) {
       warn(t.row(), t.col(), "valid date", std_string);
-      INTEGER(column_)[i] = NA_INTEGER;
+      REAL(column_)[i] = NA_REAL;
       return;
     }
-    INTEGER(column_)[i] = dt.date();
+    REAL(column_)[i] = dt.date();
     return;
   }
   case TOKEN_MISSING:
   case TOKEN_EMPTY:
-    INTEGER(column_)[i] = NA_INTEGER;
+    REAL(column_)[i] = NA_REAL;
     return;
   case TOKEN_EOF:
     Rcpp::stop("Invalid token");
@@ -260,23 +255,23 @@ void CollectorLogical::setValue(int i, const Token& t) {
 
     switch(size) {
     case 1:
-      if (*string.first == 'T') {
+      if (*string.first == 'T' || *string.first == 't' || *string.first == '1') {
         LOGICAL(column_)[i] = 1;
         return;
       }
-      if (*string.first == 'F') {
+      if (*string.first == 'F' || *string.first == 'f' || *string.first == '0') {
         LOGICAL(column_)[i] = 0;
         return;
       }
       break;
     case 4:
-      if (strncmp(string.first, "TRUE", 4) == 0) {
+      if (strncmp(string.first, "TRUE", 4) == 0 || strncmp(string.first, "true", 4) == 0) {
         LOGICAL(column_)[i] = 1;
         return;
       }
       break;
     case 5:
-      if (strncmp(string.first, "FALSE", 5) == 0) {
+      if (strncmp(string.first, "FALSE", 5) == 0 || strncmp(string.first, "false", 5) == 0) {
         LOGICAL(column_)[i] = 0;
         return;
       }
@@ -285,7 +280,7 @@ void CollectorLogical::setValue(int i, const Token& t) {
       break;
     }
 
-    warn(t.row(), t.col(), "T/F/TRUE/FALSE", string);
+    warn(t.row(), t.col(), "1/0/T/F/TRUE/FALSE", string);
     LOGICAL(column_)[i] = NA_LOGICAL;
     return;
   };
@@ -333,28 +328,37 @@ void CollectorTime::setValue(int i, const Token& t) {
     std::string std_string(string.first, string.second);
 
     parser_.setDate(std_string.c_str());
-    bool res = (format_ == "") ? parser_.parseTime() : parser_.parse(format_);
+    bool res = (format_ == "") ? parser_.parseLocaleTime() : parser_.parse(format_);
 
     if (!res) {
       warn(t.row(), t.col(), "time like " +  format_, std_string);
-      INTEGER(column_)[i] = NA_INTEGER;
+      REAL(column_)[i] = NA_REAL;
       return;
     }
 
     DateTime dt = parser_.makeTime();
     if (!dt.validTime()) {
       warn(t.row(), t.col(), "valid date", std_string);
-      INTEGER(column_)[i] = NA_INTEGER;
+      REAL(column_)[i] = NA_REAL;
       return;
     }
-    INTEGER(column_)[i] = dt.time();
+    REAL(column_)[i] = dt.time();
     return;
   }
   case TOKEN_MISSING:
   case TOKEN_EMPTY:
-    INTEGER(column_)[i] = NA_INTEGER;
+    REAL(column_)[i] = NA_REAL;
+    return;
   case TOKEN_EOF:
     Rcpp::stop("Invalid token");
   }
 
+}
+
+void CollectorRaw::setValue(int i, const Token& t) {
+  if (t.type() == TOKEN_EOF) {
+    Rcpp::stop("Invalid token");
+  }
+  SET_VECTOR_ELT(column_, i, t.asRaw());
+  return;
 }

@@ -39,8 +39,8 @@
 #' # South American locale
 #' locale("es", decimal_mark = ",")
 locale <- function(date_names = "en",
-                   date_format = "%Y%.%m%.%d", time_format = "%H:%M",
-                   decimal_mark = ".", grouping_mark = NULL,
+                   date_format = "%AD", time_format = "%AT",
+                   decimal_mark = ".", grouping_mark = ",",
                    tz = "UTC", encoding = "UTF-8",
                    asciify = FALSE) {
   if (is.character(date_names)) {
@@ -51,12 +51,18 @@ locale <- function(date_names = "en",
     date_names[] <- lapply(date_names, stringi::stri_trans_general, id = "latin-ascii")
   }
 
-  stopifnot(decimal_mark %in% c(".", ","))
-
-  if (is.null(grouping_mark)) {
+  if (missing(grouping_mark) && !missing(decimal_mark)) {
     grouping_mark <- if (decimal_mark == ".") "," else "."
+  } else if (missing(decimal_mark) && !missing(grouping_mark)) {
+    decimal_mark <- if (grouping_mark == ".") "," else "."
   }
+
+  stopifnot(decimal_mark %in% c(".", ","))
   stopifnot(is.character(grouping_mark), length(grouping_mark) == 1)
+  if (decimal_mark == grouping_mark) {
+    stop("`decimal_mark` and `grouping_mark` must be different", call. = FALSE)
+  }
+
   check_tz(tz)
   check_encoding(encoding)
 
@@ -74,6 +80,8 @@ locale <- function(date_names = "en",
   )
 }
 
+is.locale <- function(x) inherits(x, "locale")
+
 #' @export
 print.locale <- function(x, ...) {
   cat("<locale>\n")
@@ -90,11 +98,8 @@ print.locale <- function(x, ...) {
 default_locale <- function() {
   loc <- getOption("readr.default_locale")
   if (is.null(loc)) {
-    return(locale())
-  }
-
-  if (interactive()) {
-    message("Using non-default locale")
+    loc <- locale()
+    options("readr.default_locale" = loc)
   }
 
   loc

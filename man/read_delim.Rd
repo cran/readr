@@ -9,20 +9,24 @@
 \usage{
 read_delim(file, delim, quote = "\\"", escape_backslash = FALSE,
   escape_double = TRUE, col_names = TRUE, col_types = NULL,
-  locale = default_locale(), na = c("", "NA"), comment = "", skip = 0,
-  n_max = -1, progress = interactive())
+  locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
+  comment = "", trim_ws = FALSE, skip = 0, n_max = Inf,
+  guess_max = min(1000, n_max), progress = interactive())
 
 read_csv(file, col_names = TRUE, col_types = NULL,
-  locale = default_locale(), na = c("", "NA"), comment = "",
-  trim_ws = TRUE, skip = 0, n_max = -1, progress = interactive())
+  locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
+  comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
+  guess_max = min(1000, n_max), progress = interactive())
 
 read_csv2(file, col_names = TRUE, col_types = NULL,
-  locale = default_locale(), na = c("", "NA"), comment = "",
-  trim_ws = TRUE, skip = 0, n_max = -1, progress = interactive())
+  locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
+  comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
+  guess_max = min(1000, n_max), progress = interactive())
 
 read_tsv(file, col_names = TRUE, col_types = NULL,
-  locale = default_locale(), na = c("", "NA"), comment = "",
-  trim_ws = TRUE, skip = 0, n_max = -1, progress = interactive())
+  locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
+  comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
+  guess_max = min(1000, n_max), progress = interactive())
 }
 \arguments{
 \item{file}{Either a path to a file, a connection, or literal data
@@ -59,9 +63,13 @@ a single quote, \code{\"}.}
 
   If \code{col_names} is a character vector, the values will be used as the
   names of the columns, and the first row of the input will be read into
-  the first row of the output data frame.}
+  the first row of the output data frame.
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}}, specification of
+  Missing (\code{NA}) column names will generate a warning, and be filled
+  in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
+  will generate a warning and be made unique with a numeric prefix.}
+
+\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
   a string. See \code{vignette("column-types")} for more details.
 
   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -69,7 +77,7 @@ a single quote, \code{\"}.}
   imputation fails, you'll need to supply the correct types yourself.
 
   If a column specification created by \code{\link{cols}}, it must contain
-  one "\code{\link{collector}}" for each column. If you only want to read a
+  one column specification for each column. If you only want to read a
   subset of the columns, use \code{\link{cols_only}}.
 
   Alternatively, you can use a compact string representation where each
@@ -87,19 +95,24 @@ names.}
 \item{na}{Character vector of strings to use for missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
+\item{quoted_na}{Should missing values inside quotes be treated as missing
+values (the default) or strings.}
+
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
+
+\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+each field before parsing it?}
 
 \item{skip}{Number of lines to skip before reading data.}
 
 \item{n_max}{Maximum number of records to read.}
 
+\item{guess_max}{Maximum number of records to use for guessing column types.}
+
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session. The display is updated every 50,000 values
 and will only display if estimated reading time is 5 seconds or more.}
-
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
-each field before parsing it?}
 }
 \value{
 A data frame. If there are parsing problems, a warning tells you
@@ -116,9 +129,9 @@ decimal separator.
 \examples{
 # Input sources -------------------------------------------------------------
 # Read from a path
-read_csv(system.file("extdata/mtcars.csv", package = "readr"))
-read_csv(system.file("extdata/mtcars.csv.zip", package = "readr"))
-read_csv(system.file("extdata/mtcars.csv.bz2", package = "readr"))
+read_csv(readr_example("mtcars.csv"))
+read_csv(readr_example("mtcars.csv.zip"))
+read_csv(readr_example("mtcars.csv.bz2"))
 read_csv("https://github.com/hadley/readr/raw/master/inst/extdata/mtcars.csv")
 
 # Or directly from a string (must contain a newline)

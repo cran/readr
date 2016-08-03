@@ -6,7 +6,7 @@
 \title{Read lines from a file or string.}
 \usage{
 read_lines(file, skip = 0, n_max = -1L, locale = default_locale(),
-  progress = interactive())
+  na = character(), progress = interactive())
 
 read_lines_raw(file, skip = 0, n_max = -1L, progress = interactive())
 }
@@ -25,7 +25,7 @@ read_lines_raw(file, skip = 0, n_max = -1L, progress = interactive())
 
 \item{skip}{Number of lines to skip before reading data.}
 
-\item{n_max}{Number of lines to read. If \code{n} is -1, all lines in
+\item{n_max}{Number of lines to read. If \code{n_max} is -1, all lines in
 file will be read.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
@@ -34,21 +34,25 @@ The default locale is US-centric (like R), but you can use
 the default time zone, encoding, decimal mark, big mark, and day/month
 names.}
 
+\item{na}{Character vector of strings to use for missing values. Set this
+option to \code{character()} to indicate no missing values.}
+
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session. The display is updated every 50,000 values
 and will only display if estimated reading time is 5 seconds or more.}
 }
 \value{
-A character vector with one element for each line.
+\code{read_lines}: A character vector with one element for each line.
+  \code{read_lines_raw}: A list containing a raw vector for each line.
 }
 \description{
 Read lines from a file or string.
 }
 \examples{
-read_lines(system.file("extdata/mtcars.csv", package = "readr"))
+read_lines(readr_example("mtcars.csv"))
 read_lines("1\\n\\n2")
 read_lines("\\n")
 
-read_lines_raw(system.file("extdata/mtcars.csv", package = "readr"))
+read_lines_raw(readr_example("mtcars.csv"))
 }
 

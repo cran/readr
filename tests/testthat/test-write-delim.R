@@ -3,9 +3,9 @@ context("write_delim")
 test_that("strings are only quoted if needed", {
   x <- c("a", ',')
 
-  csv <- write_delim(data.frame(x), "", delim = ",",col_names = FALSE)
+  csv <- format_delim(data.frame(x), delim = ",",col_names = FALSE)
   expect_equal(csv, 'a\n\",\"\n')
-  ssv <- write_delim(data.frame(x), "", delim = " ",col_names = FALSE)
+  ssv <- format_delim(data.frame(x), delim = " ",col_names = FALSE)
   expect_equal(ssv, 'a\n,\n')
 })
 
@@ -22,9 +22,9 @@ test_that("read_delim/csv/tsv and write_delim round trip special chars", {
   x <- c("a", '"', ",", "\n","at\t")
 
   output <- data.frame(x)
-  input <- read_delim(format_delim(output, delim = " "), delim = " ")
-  input_csv <- read_csv(format_delim(output, delim = ","))
-  input_tsv <- read_tsv(format_delim(output, delim = "\t"))
+  input <- read_delim(format_delim(output, delim = " "), delim = " ", progress = FALSE)
+  input_csv <- read_csv(format_delim(output, delim = ","), progress = FALSE)
+  input_tsv <- read_tsv(format_delim(output, delim = "\t"), progress = FALSE)
   expect_equal(input$x, input_csv$x, input_tsv$x,  x)
 })
 
@@ -40,7 +40,7 @@ test_that("logical values give long names", {
 
 test_that("roundtrip preserved floating point numbers", {
   input <- data.frame(x = runif(100))
-  output <- read_delim(format_delim(input, delim = " "), delim = " ")
+  output <- read_delim(format_delim(input, delim = " "), delim = " ", progress = FALSE)
 
   expect_equal(input$x, output$x)
 })
@@ -51,12 +51,44 @@ test_that("roundtrip preserves dates and datetimes", {
   attr(y, "tzone") <- "UTC"
 
   input <- data.frame(x, y)
-  output <- read_delim(format_delim(input, delim = " "), delim = " ")
+  output <- read_delim(format_delim(input, delim = " "), delim = " ", progress = FALSE)
 
   expect_equal(output$x, x)
   expect_equal(output$y, y)
 })
 
-test_that("fails to create file in non-existent direction", {
+test_that("fails to create file in non-existent directory", {
   expect_error(write_csv(mtcars, file.path(tempdir(), "/x/y")), "Failed to open")
+})
+
+test_that("write_excel_csv includes a byte order mark", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp))
+
+  write_excel_csv(mtcars, tmp)
+
+  output <- readBin(tmp, "raw", file.info(tmp)$size)
+
+  # BOM is there
+  expect_equal(output[1:3], charToRaw("\xEF\xBB\xBF"))
+
+  # Rest of file also there
+  expect_equal(output[4:6], charToRaw("mpg"))
+})
+
+
+test_that("writes a tailing .0 for whole number doubles", {
+  expect_equal(format_tsv(tibble::data_frame(x = 1)), "x\n1.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = 0)), "x\n0.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = -1)), "x\n-1.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = 999)), "x\n999.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = -999)), "x\n-999.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = 123456789)), "x\n123456789.0\n")
+
+  expect_equal(format_tsv(tibble::data_frame(x = -123456789)), "x\n-123456789.0\n")
 })

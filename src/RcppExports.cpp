@@ -123,18 +123,45 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// read_file_raw_
+RawVector read_file_raw_(List sourceSpec);
+RcppExport SEXP readr_read_file_raw_(SEXP sourceSpecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type sourceSpec(sourceSpecSEXP);
+    __result = Rcpp::wrap(read_file_raw_(sourceSpec));
+    return __result;
+END_RCPP
+}
 // read_lines_
-CharacterVector read_lines_(List sourceSpec, List locale_, int n_max, bool progress);
-RcppExport SEXP readr_read_lines_(SEXP sourceSpecSEXP, SEXP locale_SEXP, SEXP n_maxSEXP, SEXP progressSEXP) {
+CharacterVector read_lines_(List sourceSpec, List locale_, std::vector<std::string> na, int n_max, bool progress);
+RcppExport SEXP readr_read_lines_(SEXP sourceSpecSEXP, SEXP locale_SEXP, SEXP naSEXP, SEXP n_maxSEXP, SEXP progressSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< List >::type sourceSpec(sourceSpecSEXP);
     Rcpp::traits::input_parameter< List >::type locale_(locale_SEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type na(naSEXP);
     Rcpp::traits::input_parameter< int >::type n_max(n_maxSEXP);
     Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
-    __result = Rcpp::wrap(read_lines_(sourceSpec, locale_, n_max, progress));
+    __result = Rcpp::wrap(read_lines_(sourceSpec, locale_, na, n_max, progress));
     return __result;
+END_RCPP
+}
+// read_lines_chunked_
+void read_lines_chunked_(List sourceSpec, List locale_, std::vector<std::string> na, int chunkSize, Environment callback, bool progress);
+RcppExport SEXP readr_read_lines_chunked_(SEXP sourceSpecSEXP, SEXP locale_SEXP, SEXP naSEXP, SEXP chunkSizeSEXP, SEXP callbackSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type sourceSpec(sourceSpecSEXP);
+    Rcpp::traits::input_parameter< List >::type locale_(locale_SEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type na(naSEXP);
+    Rcpp::traits::input_parameter< int >::type chunkSize(chunkSizeSEXP);
+    Rcpp::traits::input_parameter< Environment >::type callback(callbackSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    read_lines_chunked_(sourceSpec, locale_, na, chunkSize, callback, progress);
+    return R_NilValue;
 END_RCPP
 }
 // read_lines_raw_
@@ -150,9 +177,9 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// read_tokens
-RObject read_tokens(List sourceSpec, List tokenizerSpec, ListOf<List> colSpecs, CharacterVector colNames, List locale_, int n_max, bool progress);
-RcppExport SEXP readr_read_tokens(SEXP sourceSpecSEXP, SEXP tokenizerSpecSEXP, SEXP colSpecsSEXP, SEXP colNamesSEXP, SEXP locale_SEXP, SEXP n_maxSEXP, SEXP progressSEXP) {
+// read_tokens_
+RObject read_tokens_(List sourceSpec, List tokenizerSpec, ListOf<List> colSpecs, CharacterVector colNames, List locale_, int n_max, bool progress);
+RcppExport SEXP readr_read_tokens_(SEXP sourceSpecSEXP, SEXP tokenizerSpecSEXP, SEXP colSpecsSEXP, SEXP colNamesSEXP, SEXP locale_SEXP, SEXP n_maxSEXP, SEXP progressSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -163,8 +190,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type locale_(locale_SEXP);
     Rcpp::traits::input_parameter< int >::type n_max(n_maxSEXP);
     Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
-    __result = Rcpp::wrap(read_tokens(sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max, progress));
+    __result = Rcpp::wrap(read_tokens_(sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max, progress));
     return __result;
+END_RCPP
+}
+// read_tokens_chunked_
+void read_tokens_chunked_(List sourceSpec, Environment callback, int chunkSize, List tokenizerSpec, ListOf<List> colSpecs, CharacterVector colNames, List locale_, bool progress);
+RcppExport SEXP readr_read_tokens_chunked_(SEXP sourceSpecSEXP, SEXP callbackSEXP, SEXP chunkSizeSEXP, SEXP tokenizerSpecSEXP, SEXP colSpecsSEXP, SEXP colNamesSEXP, SEXP locale_SEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type sourceSpec(sourceSpecSEXP);
+    Rcpp::traits::input_parameter< Environment >::type callback(callbackSEXP);
+    Rcpp::traits::input_parameter< int >::type chunkSize(chunkSizeSEXP);
+    Rcpp::traits::input_parameter< List >::type tokenizerSpec(tokenizerSpecSEXP);
+    Rcpp::traits::input_parameter< ListOf<List> >::type colSpecs(colSpecsSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type colNames(colNamesSEXP);
+    Rcpp::traits::input_parameter< List >::type locale_(locale_SEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    read_tokens_chunked_(sourceSpec, callback, chunkSize, tokenizerSpec, colSpecs, colNames, locale_, progress);
+    return R_NilValue;
 END_RCPP
 }
 // guess_types_
@@ -182,14 +226,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // whitespaceColumns
-List whitespaceColumns(List sourceSpec, int n);
-RcppExport SEXP readr_whitespaceColumns(SEXP sourceSpecSEXP, SEXP nSEXP) {
+List whitespaceColumns(List sourceSpec, int n, std::string comment);
+RcppExport SEXP readr_whitespaceColumns(SEXP sourceSpecSEXP, SEXP nSEXP, SEXP commentSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< List >::type sourceSpec(sourceSpecSEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    __result = Rcpp::wrap(whitespaceColumns(sourceSpec, n));
+    Rcpp::traits::input_parameter< std::string >::type comment(commentSEXP);
+    __result = Rcpp::wrap(whitespaceColumns(sourceSpec, n, comment));
     return __result;
 END_RCPP
 }
@@ -210,18 +255,56 @@ BEGIN_RCPP
 END_RCPP
 }
 // stream_delim
-std::string stream_delim(List df, const std::string& path, char delim, const std::string& na, bool col_names, bool append);
-RcppExport SEXP readr_stream_delim(SEXP dfSEXP, SEXP pathSEXP, SEXP delimSEXP, SEXP naSEXP, SEXP col_namesSEXP, SEXP appendSEXP) {
+std::string stream_delim(const List& df, const std::string& path, char delim, const std::string& na, bool col_names, bool append, bool bom);
+RcppExport SEXP readr_stream_delim(SEXP dfSEXP, SEXP pathSEXP, SEXP delimSEXP, SEXP naSEXP, SEXP col_namesSEXP, SEXP appendSEXP, SEXP bomSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< List >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const List& >::type df(dfSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
     Rcpp::traits::input_parameter< char >::type delim(delimSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type na(naSEXP);
     Rcpp::traits::input_parameter< bool >::type col_names(col_namesSEXP);
     Rcpp::traits::input_parameter< bool >::type append(appendSEXP);
-    __result = Rcpp::wrap(stream_delim(df, path, delim, na, col_names, append));
+    Rcpp::traits::input_parameter< bool >::type bom(bomSEXP);
+    __result = Rcpp::wrap(stream_delim(df, path, delim, na, col_names, append, bom));
     return __result;
+END_RCPP
+}
+// write_lines_
+void write_lines_(const CharacterVector& lines, const std::string& path, const std::string& na, bool append);
+RcppExport SEXP readr_write_lines_(SEXP linesSEXP, SEXP pathSEXP, SEXP naSEXP, SEXP appendSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const CharacterVector& >::type lines(linesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type na(naSEXP);
+    Rcpp::traits::input_parameter< bool >::type append(appendSEXP);
+    write_lines_(lines, path, na, append);
+    return R_NilValue;
+END_RCPP
+}
+// write_file_raw_
+void write_file_raw_(RawVector x, const std::string& path, bool append);
+RcppExport SEXP readr_write_file_raw_(SEXP xSEXP, SEXP pathSEXP, SEXP appendSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< bool >::type append(appendSEXP);
+    write_file_raw_(x, path, append);
+    return R_NilValue;
+END_RCPP
+}
+// write_file_
+void write_file_(std::string x, const std::string& path, bool append);
+RcppExport SEXP readr_write_file_(SEXP xSEXP, SEXP pathSEXP, SEXP appendSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< bool >::type append(appendSEXP);
+    write_file_(x, path, append);
+    return R_NilValue;
 END_RCPP
 }

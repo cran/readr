@@ -56,6 +56,12 @@ test_that("%OS captures partial seconds", {
   expect_equal(as.POSIXlt(x)$sec, 1.333, tol = 1e-6)
 })
 
+test_that("%y requries 4 digits", {
+  expect_warning(parse_date("003-01-01", "%Y-%m-%d"), "parsing failure")
+  expect_warning(parse_date("03-01-01", "%Y-%m-%d"), "parsing failure")
+  expect_warning(parse_date("00003-01-01", "%Y-%m-%d"), "parsing failure")
+})
+
 test_that("invalid dates return NA", {
   expect_warning(x <- parse_datetime("2010-02-30", "%Y-%m-%d"))
   expect_true(is.na(x))
@@ -70,7 +76,7 @@ test_that("failed parsing returns NA", {
 })
 
 test_that("invalid specs returns NA", {
-  expect_warning(x <- parse_datetime("2010-02-02", "%Y-%m-%m"))
+  expect_warning(x <- parse_datetime("2010-02-20", "%Y-%m-%m"))
   expect_equal(is.na(x), TRUE)
   expect_equal(n_problems(x), 1)
 })
@@ -81,11 +87,29 @@ test_that("ISO8601 partial dates are not parsed", {
   expect_equal(n_problems(parse_datetime("2001-01")), 1)
 })
 
+test_that("Year only gets parsed", {
+  expect_equal(parse_datetime("2010", "%Y"), ISOdate(2010, 1, 1, 0, tz = "UTC"))
+  expect_equal(parse_datetime("2010-06", "%Y-%m"),ISOdate(2010, 6, 1, 0, tz = "UTC"))
+})
+
 test_that("%p detects AM/PM", {
-  am <- parse_datetime(c("2015-01-01 01:00 AM", "2015-01-01 01:00 am"), "%F %R %p")
-  pm <- parse_datetime(c("2015-01-01 01:00 PM", "2015-01-01 01:00 pm"), "%F %R %p")
+  am <- parse_datetime(c("2015-01-01 01:00 AM", "2015-01-01 01:00 am"), "%F %I:%M %p")
+  pm <- parse_datetime(c("2015-01-01 01:00 PM", "2015-01-01 01:00 pm"), "%F %I:%M %p")
 
   expect_equal(pm, am + 12 * 3600)
+
+  expect_equal(parse_datetime("12/31/1991 12:01 AM", "%m/%d/%Y %I:%M %p"),
+    POSIXct(694137660, "UTC"))
+
+  expect_equal(parse_datetime("12/31/1991 12:01 PM", "%m/%d/%Y %I:%M %p"),
+    POSIXct(694180860, "UTC"))
+
+  expect_equal(parse_datetime("12/31/1991 1:01 AM", "%m/%d/%Y %I:%M %p"),
+    POSIXct(694141260, "UTC"))
+
+  expect_warning(x <- parse_datetime(c("12/31/1991 00:01 PM", "12/31/1991 13:01 PM"),
+      "%m/%d/%Y %I:%M %p"))
+  expect_equal(n_problems(x), 2)
 })
 
 test_that("%b and %B are case insensitve", {
@@ -106,14 +130,31 @@ test_that("%. requires a value", {
 })
 
 test_that("%Z detects named time zones", {
-  ref <- POSIXct(1285912800, "US/Central")
-  ct <- locale(tz = "US/Central")
+  ref <- POSIXct(1285912800, "America/Chicago")
+  ct <- locale(tz = "America/Chicago")
 
   expect_equal(parse_datetime("2010-10-01 01:00", locale = ct), ref)
   expect_equal(
-    parse_datetime("2010-10-01 01:00 US/Central", "%Y-%m-%d %H:%M %Z", locale = ct),
+    parse_datetime("2010-10-01 01:00 America/Chicago", "%Y-%m-%d %H:%M %Z", locale = ct),
     ref
   )
+})
+
+test_that("parse_date returns a double like as.Date()", {
+  ref <- parse_date("2001-01-01")
+
+  expect_type(parse_datetime("2001-01-01"), "double")
+})
+
+test_that("parses NA/empty correctly", {
+  expect_equal(parse_datetime(""), POSIXct(NA_real_))
+  expect_equal(parse_date(""), as.Date(NA))
+
+  expect_equal(parse_datetime("NA"), POSIXct(NA_real_))
+  expect_equal(parse_date("NA"), as.Date(NA))
+
+  expect_equal(parse_datetime("TeSt", na = "TeSt"), POSIXct(NA_real_))
+  expect_equal(parse_date("TeSt", na = "TeSt"), as.Date(NA))
 })
 
 # Locales -----------------------------------------------------------------
@@ -193,18 +234,17 @@ test_that("unambiguous times with and without daylight savings", {
 # Guessing ---------------------------------------------------------------------
 
 test_that("DDDD-DD not parsed as date (i.e. doesn't trigger partial date match)", {
-  expect_equal(collector_guess(c("1989-90", "1990-91")), "character")
+  expect_equal(guess_parser(c("1989-90", "1990-91")), "character")
 })
 
 test_that("leading zeros don't get parsed as date without explicit separator", {
-  expect_equal(collector_guess("00010203"), "character")
-  expect_equal(collector_guess("0001-02-03"), "date")
+  expect_equal(guess_parser("00010203"), "character")
+  expect_equal(guess_parser("0001-02-03"), "date")
 })
 
 test_that("must have either two - or none", {
-  expect_equal(collector_guess("2000-10-10"), "date")
-  expect_equal(collector_guess("2000-1010"), "character")
-  expect_equal(collector_guess("200010-10"), "character")
-  expect_equal(collector_guess("20001010"), "integer")
+  expect_equal(guess_parser("2000-10-10"), "date")
+  expect_equal(guess_parser("2000-1010"), "character")
+  expect_equal(guess_parser("200010-10"), "character")
+  expect_equal(guess_parser("20001010"), "integer")
 })
-

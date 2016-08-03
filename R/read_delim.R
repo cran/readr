@@ -10,7 +10,6 @@ NULL
 #' respectively. \code{read_csv2} uses \code{;} for separators, instead of
 #' \code{,}. This is common in European countries which use \code{,} as the
 #' decimal separator.
-#'
 #' @inheritParams datasource
 #' @inheritParams tokenizer_delim
 #' @param col_names Either \code{TRUE}, \code{FALSE} or a character vector
@@ -23,7 +22,11 @@ NULL
 #'   If \code{col_names} is a character vector, the values will be used as the
 #'   names of the columns, and the first row of the input will be read into
 #'   the first row of the output data frame.
-#' @param col_types One of \code{NULL}, a \code{\link{cols}}, specification of
+#'
+#'   Missing (\code{NA}) column names will generate a warning, and be filled
+#'   in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
+#'   will generate a warning and be made unique with a numeric prefix.
+#' @param col_types One of \code{NULL}, a \code{\link{cols}} specification, or
 #'   a string. See \code{vignette("column-types")} for more details.
 #'
 #'   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -31,7 +34,7 @@ NULL
 #'   imputation fails, you'll need to supply the correct types yourself.
 #'
 #'   If a column specification created by \code{\link{cols}}, it must contain
-#'   one "\code{\link{collector}}" for each column. If you only want to read a
+#'   one column specification for each column. If you only want to read a
 #'   subset of the columns, use \code{\link{cols_only}}.
 #'
 #'   Alternatively, you can use a compact string representation where each
@@ -45,6 +48,7 @@ NULL
 #'   the default time zone, encoding, decimal mark, big mark, and day/month
 #'   names.
 #' @param n_max Maximum number of records to read.
+#' @param guess_max Maximum number of records to use for guessing column types.
 #' @param progress Display a progress bar? By default it will only display
 #'   in an interactive session. The display is updated every 50,000 values
 #'   and will only display if estimated reading time is 5 seconds or more.
@@ -54,9 +58,9 @@ NULL
 #' @examples
 #' # Input sources -------------------------------------------------------------
 #' # Read from a path
-#' read_csv(system.file("extdata/mtcars.csv", package = "readr"))
-#' read_csv(system.file("extdata/mtcars.csv.zip", package = "readr"))
-#' read_csv(system.file("extdata/mtcars.csv.bz2", package = "readr"))
+#' read_csv(readr_example("mtcars.csv"))
+#' read_csv(readr_example("mtcars.csv.zip"))
+#' read_csv(readr_example("mtcars.csv.bz2"))
 #' read_csv("https://github.com/hadley/readr/raw/master/inst/extdata/mtcars.csv")
 #'
 #' # Or directly from a string (must contain a newline)
@@ -85,47 +89,49 @@ read_delim <- function(file, delim, quote = '"',
                        escape_backslash = FALSE, escape_double = TRUE,
                        col_names = TRUE, col_types = NULL,
                        locale = default_locale(),
-                       na = c("", "NA"), comment = "",
-                       skip = 0, n_max = -1, progress = interactive()) {
+                       na = c("", "NA"), quoted_na = TRUE,
+                       comment = "", trim_ws = FALSE,
+                       skip = 0, n_max = Inf, guess_max = min(1000, n_max), progress = interactive()) {
   tokenizer <- tokenizer_delim(delim, quote = quote,
     escape_backslash = escape_backslash, escape_double = escape_double,
-    na = na, comment = comment)
+    na = na, quoted_na = quoted_na, comment = comment, trim_ws = trim_ws)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
-    locale = locale, skip = skip, comment = comment, n_max = n_max,
-    progress = progress)
+    locale = locale, skip = skip, comment = comment, n_max = n_max, guess_max =
+      guess_max, progress = progress)
 }
 
 #' @rdname read_delim
 #' @export
 read_csv <- function(file, col_names = TRUE, col_types = NULL,
-                     locale = default_locale(), na = c("", "NA"), comment = "",
-                     trim_ws = TRUE, skip = 0, n_max = -1,
+                     locale = default_locale(), na = c("", "NA"),
+                     quoted_na = TRUE, comment = "", trim_ws = TRUE, skip = 0,
+                     n_max = Inf, guess_max = min(1000, n_max),
                      progress = interactive()) {
 
-  tokenizer <- tokenizer_csv(na = na, comment = comment, trim_ws = trim_ws)
+  tokenizer <- tokenizer_csv(na = na, quoted_na = TRUE, comment = comment, trim_ws = trim_ws)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
-    locale = locale, skip = skip, comment = comment, n_max = n_max,
-    progress = progress)
+    locale = locale, skip = skip, comment = comment, n_max = n_max, guess_max =
+      guess_max, progress = progress)
 }
 
 #' @rdname read_delim
 #' @export
 read_csv2 <- function(file, col_names = TRUE, col_types = NULL,
                       locale = default_locale(),
-                      na = c("", "NA"), comment = "",
-                      trim_ws = TRUE, skip = 0, n_max = -1,
-                      progress = interactive()) {
+                      na = c("", "NA"), quoted_na = TRUE, comment = "",
+                      trim_ws = TRUE, skip = 0, n_max = Inf,
+                      guess_max = min(1000, n_max), progress = interactive()) {
 
   if (locale$decimal_mark == ".") {
     locale$decimal_mark <- ","
     locale$grouping_mark <- "."
   }
 
-  tokenizer <- tokenizer_delim(delim = ";", na = na, comment = comment,
-    trim_ws = trim_ws)
+  tokenizer <- tokenizer_delim(delim = ";", na = na, quoted_na = quoted_na,
+    comment = comment, trim_ws = trim_ws)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max,
-    progress = progress)
+    guess_max = guess_max, progress = progress)
 }
 
 
@@ -133,39 +139,106 @@ read_csv2 <- function(file, col_names = TRUE, col_types = NULL,
 #' @export
 read_tsv <- function(file, col_names = TRUE, col_types = NULL,
                      locale = default_locale(),
-                     na = c("", "NA"), comment = "",
-                     trim_ws = TRUE, skip = 0, n_max = -1,
-                     progress = interactive()) {
+                     na = c("", "NA"), quoted_na = TRUE,
+                     comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
+                     guess_max = min(1000, n_max), progress = interactive()) {
 
-  tokenizer <- tokenizer_tsv(na = na, comment = comment, trim_ws = trim_ws)
+  tokenizer <- tokenizer_tsv(na = na, quoted_na = quoted_na, comment = comment, trim_ws = trim_ws)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max,
-    progress = progress)
+    guess_max = guess_max, progress = progress)
 }
 
 # Helper functions for reading from delimited files ----------------------------
+read_tokens <- function(data, tokenizer, col_specs, col_names, locale_, n_max, progress) {
+  if (n_max == Inf) {
+    n_max <- -1
+  }
+  read_tokens_(data, tokenizer, col_specs, col_names, locale_, n_max, progress)
+}
+
 read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
                            locale = default_locale(), skip = 0, comment = "",
-                           n_max = -1, progress = interactive()) {
+                           n_max = Inf, guess_max = min(1000, n_max), progress = interactive()) {
   name <- source_name(file)
   # If connection needed, read once.
   file <- standardise_path(file)
   if (is.connection(file)) {
     data <- read_connection(file)
   } else {
+    if (empty_file(file)) {
+       return(tibble::data_frame())
+    }
     data <- file
   }
 
-  col_types <- col_spec_standardise(
-    data, skip = skip, comment = comment, n_max = n_max,
-    col_names = col_names, col_types = col_types,
-    tokenizer = tokenizer, locale = locale)
+  spec <- col_spec_standardise(
+    data, skip = skip, comment = comment, n = guess_max,
+    col_names = col_names, col_types = col_types, tokenizer = tokenizer,
+    locale = locale)
 
   ds <- datasource(data, skip = skip + isTRUE(col_names), comment = comment)
 
-  out <- read_tokens(ds, tokenizer, col_types, names(col_types), locale_ = locale,
+  if (is.null(col_types) && !inherits(ds, "source_string")) {
+    show_cols_spec(spec)
+  }
+
+  out <- read_tokens(ds, tokenizer, spec$cols, names(spec$cols), locale_ = locale,
     n_max = n_max, progress = progress)
 
   out <- name_problems(out)
+  attr(out, "spec") <- spec
   warn_problems(out, name)
 }
+
+generate_spec_fun <- function(x) {
+  formals(x)$n_max <- 0
+  formals(x)$guess_max <- 1000
+
+  args <- formals(x)
+
+  body(x) <-
+    call("attr",
+      as.call(c(substitute(x), stats::setNames(lapply(names(args), as.symbol), names(args)))),
+      "spec")
+
+  formals(x) <- args
+
+  x
+}
+
+#' Retrieve the column specification of a file.
+#'
+#' By default the types of the first 20 columns are printed,
+#' \code{options(readr.num_columns)} can be used to modify this (a value of 0
+#' turns off printing).
+#'
+#' @return The \code{col_spec} generated for the file.
+#' @inheritParams read_delim
+#' @export
+#' @examples
+#' # Input sources -------------------------------------------------------------
+#' # Retrieve specs from a path
+#' spec_csv(system.file("extdata/mtcars.csv", package = "readr"))
+#' spec_csv(system.file("extdata/mtcars.csv.zip", package = "readr"))
+#'
+#' # Or directly from a string (must contain a newline)
+#' spec_csv("x,y\n1,2\n3,4")
+#'
+#' # Column types --------------------------------------------------------------
+#' # By default, readr guess the columns types, looking at the first 1000 rows.
+#' # You can specify the number of rows used with guess_max.
+#' spec_csv(system.file("extdata/mtcars.csv", package = "readr"), guess_max = 20)
+spec_delim <- generate_spec_fun(read_delim)
+
+#' @rdname spec_delim
+#' @export
+spec_csv <- generate_spec_fun(read_csv)
+
+#' @rdname spec_delim
+#' @export
+spec_csv2 <- generate_spec_fun(read_csv2)
+
+#' @rdname spec_delim
+#' @export
+spec_tsv <- generate_spec_fun(read_tsv)

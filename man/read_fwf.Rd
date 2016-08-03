@@ -8,9 +8,10 @@
 \title{Read a fixed width file.}
 \usage{
 read_fwf(file, col_positions, col_types = NULL, locale = default_locale(),
-  na = c("", "NA"), skip = 0, n_max = -1, progress = interactive())
+  na = c("", "NA"), comment = "", skip = 0, n_max = Inf,
+  guess_max = min(n_max, 1000), progress = interactive())
 
-fwf_empty(file, skip = 0, col_names = NULL)
+fwf_empty(file, skip = 0, col_names = NULL, comment = "")
 
 fwf_widths(widths, col_names = NULL)
 
@@ -31,10 +32,10 @@ fwf_positions(start, end, col_names = NULL)
 
 \item{col_positions}{Column positions, as created by \code{fwf_empty},
 \code{fwf_widths} or \code{fwf_positions}. To read in only selected fields,
-use \code{fwf_positions}. The width of the last column will be silently
-extended to the next line break.}
+use \code{fwf_positions}. If the width of the last column is variable (a
+ragged fwf file), supply the last end position as NA.}
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}}, specification of
+\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
   a string. See \code{vignette("column-types")} for more details.
 
   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -42,7 +43,7 @@ extended to the next line break.}
   imputation fails, you'll need to supply the correct types yourself.
 
   If a column specification created by \code{\link{cols}}, it must contain
-  one "\code{\link{collector}}" for each column. If you only want to read a
+  one column specification for each column. If you only want to read a
   subset of the columns, use \code{\link{cols_only}}.
 
   Alternatively, you can use a compact string representation where each
@@ -60,9 +61,14 @@ names.}
 \item{na}{Character vector of strings to use for missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
+\item{comment}{A string used to identify comments. Any text after the
+comment characters will be silently ignored.}
+
 \item{skip}{Number of lines to skip before reading data.}
 
 \item{n_max}{Maximum number of records to read.}
+
+\item{guess_max}{Maximum number of records to use for guessing column types.}
 
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session. The display is updated every 50,000 values
@@ -70,9 +76,11 @@ and will only display if estimated reading time is 5 seconds or more.}
 
 \item{col_names}{Either NULL, or a character vector column names.}
 
-\item{widths}{Width of each field.}
+\item{widths}{Width of each field. Use NA as width of last field when
+reading a ragged fwf file.}
 
-\item{start, end}{Starting and ending (inclusive) positions of each field.}
+\item{start, end}{Starting and ending (inclusive) positions of each field.
+Use NA as last end field when reading a ragged fwf file.}
 }
 \description{
 A fixed width file can be a very compact representation of numeric data.
@@ -82,16 +90,16 @@ describe the length of every field. Readr aims to make it as easy as possible
 by providing a number of different ways to describe the field structure.
 }
 \examples{
-fwf_sample <- system.file("extdata/fwf-sample.txt", package = "readr")
+fwf_sample <- readr_example("fwf-sample.txt")
 cat(read_lines(fwf_sample))
 
 # You can specify column positions in three ways:
 # 1. Guess based on position of empty columns
-read_fwf(fwf_sample, fwf_empty(fwf_sample))
+read_fwf(fwf_sample, fwf_empty(fwf_sample, col_names = c("first", "last", "state", "ssn")))
 # 2. A vector of field widths
-read_fwf(fwf_sample, fwf_widths(c(2, 5, 3)))
+read_fwf(fwf_sample, fwf_widths(c(20, 10, 12), c("name", "state", "ssn")))
 # 3. Paired vectors of start and end positions
-read_fwf(fwf_sample, fwf_positions(c(1, 4), c(2, 10)))
+read_fwf(fwf_sample, fwf_positions(c(1, 30), c(10, 42), c("name", "ssn")))
 }
 \seealso{
 \code{\link{read_table}} to read fixed width files where each

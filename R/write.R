@@ -5,11 +5,12 @@
 #' columns to suitable output.
 #'
 #' @section Output:
-#' Factors are coerced to character. Doubles are coerced to character to
-#' take advantage of R's nice output for doubles. POSIXct's are formatted
-#' as ISO8601.
+#' Factors are coerced to character. Doubles are formatted using the grisu3
+#' algorithm. POSIXct's are formatted as ISO8601.
 #'
-#' All columns are encoded as UTF-8.
+#' All columns are encoded as UTF-8. \code{write_excel_csv} also includes a
+#' \href{https://en.wikipedia.org/wiki/Byte_order_mark}{UTF-8 Byte order mark}
+#' which indicates to Excel the csv is UTF-8 encoded.
 #'
 #' Values are only quoted if needed: if they contain a comma, quote or newline.
 #'
@@ -24,8 +25,11 @@
 #' @param na String used for missing values. Defaults to NA. Missing values
 #'   will never be quoted; strings with the same value as \code{na} will
 #'   always be quoted.
-#' @return \code{write_*} returns in the input \code{x} invisibily,
+#' @return \code{write_*} returns the input \code{x} invisibly,
 #'   \code{format_*} returns a string.
+#' @references Florian Loitsch, Printing Floating-Point Numbers Quickly and
+#' Accurately with Integers, PLDI '10,
+#' \url{http://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf}
 #' @export
 #' @examples
 #' tmp <- tempfile()
@@ -48,30 +52,36 @@ write_delim <- function(x, path, delim = " ", na = "NA", append = FALSE,
   stopifnot(is.data.frame(x))
   path <- normalizePath(path, mustWork = FALSE)
 
-  x <- lapply(x, output_column)
-
-  out <- stream_delim(x, path, delim, col_names = col_names, append = append,
+  x_out <- lapply(x, output_column)
+  stream_delim(x_out, path, delim, col_names = col_names, append = append,
     na = na)
-  if (path == "") out else invisible()
+
+  invisible(x)
 }
 
 #' @rdname write_delim
 #' @export
 write_csv <- function(x, path, na = "NA", append = FALSE, col_names = !append) {
-  if (identical(path, "")) {
-    stop("Please use format_csv instead.", call. = FALSE)
-  }
-
-  write_delim(x, path, delim = ',', na = na,append = append,
-    col_names = col_names)
-  invisible(path)
+  write_delim(x, path, delim = ",", na = na,append = append, col_names = col_names)
 }
 
+#' @rdname write_delim
+#' @export
+write_excel_csv <- function(x, path, na = "NA", append = FALSE, col_names = !append) {
+  stopifnot(is.data.frame(x))
+  path <- normalizePath(path, mustWork = FALSE)
+
+  x_out <- lapply(x, output_column)
+  stream_delim(x_out, path, ",", col_names = col_names, append = append,
+    na = na, bom = TRUE)
+
+  invisible(x)
+}
 
 #' @rdname write_delim
 #' @export
 write_tsv <- function(x, path, na = "NA", append = FALSE, col_names = !append) {
-  write_delim(x, path, delim = '\t', na = na, append, col_names)
+  write_delim(x, path, delim = '\t', na = na, append = append, col_names = col_names)
 }
 
 #' @export
@@ -89,7 +99,10 @@ format_tsv <- function(x, na = "NA", append = FALSE, col_names = !append) {
 #' @export
 #' @rdname write_delim
 format_delim <- function(x, delim, na = "NA", append = FALSE, col_names = !append) {
-  write_delim(x, "", delim = delim, na = na, append = append, col_names = col_names)
+  stopifnot(is.data.frame(x))
+
+  x <- lapply(x, output_column)
+  stream_delim(x, "", delim, col_names = col_names, append = append, na = na)
 }
 
 
@@ -107,7 +120,7 @@ output_column.default <- function(x) {
 
 #' @export
 output_column.double <- function(x) {
-  as.character(x)
+  x
 }
 
 #' @export

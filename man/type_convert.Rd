@@ -10,7 +10,7 @@ type_convert(df, col_types = NULL, na = c("", "NA"), trim_ws = TRUE,
 \arguments{
 \item{df}{A data frame.}
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}}, specification of
+\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
   a string. See \code{vignette("column-types")} for more details.
 
   If \code{NULL}, all column types will be imputed from the first 1000 rows
@@ -18,14 +18,11 @@ type_convert(df, col_types = NULL, na = c("", "NA"), trim_ws = TRUE,
   imputation fails, you'll need to supply the correct types yourself.
 
   If a column specification created by \code{\link{cols}}, it must contain
-  one "\code{\link{collector}}" for each column. If you only want to read a
+  one column specification for each column. If you only want to read a
   subset of the columns, use \code{\link{cols_only}}.
 
-  Alternatively, you can use a compact string representation where each
-  character represents one column:
-  c = character, i = integer, n = number, d = double,
-  l = logical, D = date, T = date time, t = time, ? = guess, or
-  \code{_}/\code{-} to skip the column.}
+  Unlike other functions \code{type_convert} does not allow character
+  specificatinos of \code{col_types}.}
 
 \item{na}{Character vector of strings to use for missing values. Set this
 option to \code{character()} to indicate no missing values.}

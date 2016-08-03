@@ -8,6 +8,7 @@ using namespace Rcpp;
 #include "Collector.h"
 #include "Progress.h"
 #include "Warnings.h"
+#include "Reader.h"
 
 // [[Rcpp::export]]
 CharacterVector read_file_(List sourceSpec, List locale_) {
@@ -20,200 +21,110 @@ CharacterVector read_file_(List sourceSpec, List locale_) {
 }
 
 // [[Rcpp::export]]
-CharacterVector read_lines_(List sourceSpec, List locale_, int n_max = -1,
-                            bool progress = true) {
-
+RawVector read_file_raw_(List sourceSpec) {
   SourcePtr source = Source::create(sourceSpec);
-  TokenizerLine tokenizer;
-  tokenizer.tokenize(source->begin(), source->end());
+
+  RawVector res(source->end() - source->begin());
+  std::copy(source->begin(), source->end(), res.begin());
+  return res;
+}
+
+// [[Rcpp::export]]
+CharacterVector read_lines_(List sourceSpec, List locale_,
+    std::vector<std::string> na, int n_max = -1, bool progress = true) {
+
   LocaleInfo locale(locale_);
-  Progress progressBar;
+  Reader r(
+    Source::create(sourceSpec),
+    TokenizerPtr(new TokenizerLine(na)),
+    CollectorPtr(new CollectorCharacter(&locale.encoder_)),
+    progress);
 
-  int n = (n_max < 0) ? 10000 : n_max;
-  CharacterVector out(n);
+  return r.readToVector<CharacterVector>(n_max);
+}
 
-  int i = 0;
-  for (Token t = tokenizer.nextToken(); t.type() != TOKEN_EOF; t = tokenizer.nextToken()) {
-    if (progress && (i + 1) % 25000 == 0)
-      progressBar.show(tokenizer.progress());
+Function R6method(Environment env, const std::string& method) {
+  return as<Function>(env[method]);
+}
 
-    if (i >= n) {
-      if (n_max < 0) {
-        // Estimate rows in full dataset
-        n = (i / tokenizer.progress().first) * 1.2;
-        out = Rf_lengthgets(out, n);
-      } else {
-        break;
-      }
-    }
+// [[Rcpp::export]]
+void read_lines_chunked_(List sourceSpec, List locale_,
+    std::vector<std::string> na, int chunkSize, Environment callback,
+    bool progress = true) {
 
-    if (t.type() == TOKEN_STRING)
-      out[i] = t.asSEXP(&locale.encoder_);
+  LocaleInfo locale(locale_);
+  Reader r(
+    Source::create(sourceSpec),
+    TokenizerPtr(new TokenizerLine(na)),
+    CollectorPtr(new CollectorCharacter(&locale.encoder_)),
+    progress);
 
-    ++i;
+  CharacterVector out;
+
+  int pos = 1;
+  while (R6method(callback, "continue")() &&
+      (out = r.readToVector<CharacterVector>(chunkSize)).size()) {
+    R6method(callback, "receive")(out, pos);
+    pos += out.size();
   }
 
-  if (i < n) {
-    out = Rf_lengthgets(out, i);
-  }
-
-  if (progress)
-    progressBar.show(tokenizer.progress());
-  progressBar.stop();
-
-  return out;
+  return;
 }
 
 // [[Rcpp::export]]
 List read_lines_raw_(List sourceSpec, int n_max = -1, bool progress = false) {
 
-  SourcePtr source = Source::create(sourceSpec);
-  TokenizerLine tokenizer;
-  tokenizer.tokenize(source->begin(), source->end());
-  Progress progressBar;
+  Reader r(
+    Source::create(sourceSpec),
+    TokenizerPtr(new TokenizerLine()),
+    CollectorPtr(new CollectorRaw()),
+    progress);
 
-  int n = (n_max < 0) ? 10000 : n_max;
-  List out(n);
-
-  int i = 0;
-  for (Token t = tokenizer.nextToken(); t.type() != TOKEN_EOF; t = tokenizer.nextToken()) {
-    if (progress && (i + 1) % 25000 == 0)
-      progressBar.show(tokenizer.progress());
-
-    if (i >= n) {
-      if (n_max < 0) {
-        // Estimate rows in full dataset
-        n = (i / tokenizer.progress().first) * 1.2;
-        out = Rf_lengthgets(out, n);
-      } else {
-        break;
-      }
-    }
-
-    if (t.type() == TOKEN_STRING)
-      out[i] = t.asRaw();
-
-    ++i;
-  }
-
-  if (i < n) {
-    out = Rf_lengthgets(out, i);
-  }
-
-  if (progress)
-    progressBar.show(tokenizer.progress());
-  progressBar.stop();
-
-  return out;
+  return r.readToVector<List>(n_max);
 }
 
 typedef std::vector<CollectorPtr>::iterator CollectorItr;
-void checkColumns(Warnings *pWarnings, int i, int j, int n) {
-  if (j + 1 == n)
-    return;
-
-  pWarnings->addWarning(i, -1,
-    tfm::format("%i columns", n),
-    tfm::format("%i columns", j + 1)
-  );
-}
 
 // [[Rcpp::export]]
-RObject read_tokens(List sourceSpec, List tokenizerSpec, ListOf<List> colSpecs,
+RObject read_tokens_(List sourceSpec, List tokenizerSpec, ListOf<List> colSpecs,
                     CharacterVector colNames, List locale_, int n_max = -1,
                     bool progress = true) {
 
-  Warnings warnings;
-  LocaleInfo locale(locale_);
+  LocaleInfo l(locale_);
+  Reader r(
+    Source::create(sourceSpec),
+    Tokenizer::create(tokenizerSpec),
+    collectorsCreate(colSpecs, &l),
+    progress,
+    colNames);
 
-  SourcePtr source = Source::create(sourceSpec);
-
-  TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
-  tokenizer->tokenize(source->begin(), source->end());
-  tokenizer->setWarnings(&warnings);
-
-  std::vector<CollectorPtr> collectors = collectorsCreate(colSpecs, &locale, &warnings);
-
-  Progress progressBar;
-
-  // Work out how many output columns we have
-  size_t p = collectors.size();
-  size_t pOut = 0;
-  for (size_t j = 0; j < p; ++j) {
-    if (collectors[j]->skip())
-      continue;
-    pOut++;
-  }
-
-  // Match colNames to with non-skipped collectors
-  if (p != (size_t) colNames.size())
-    stop("colSpec and colNames must be same size");
-
-  CharacterVector outNames(pOut);
-  int cj = 0;
-  for (size_t j = 0; j < p; ++j) {
-    if (collectors[j]->skip())
-      continue;
-
-    outNames[cj] = colNames[j];
-    cj++;
-  }
-
-  size_t n = (n_max < 0) ? 1000 : n_max;
-  collectorsResize(collectors, n);
-
-  int i = -1, j = -1, cells = 0;
-  for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF; t = tokenizer->nextToken()) {
-    if (progress && (cells++) % 250000 == 0)
-      progressBar.show(tokenizer->progress());
-
-    if (t.col() == 0 && i != -1)
-      checkColumns(&warnings, i, j, p);
-
-    if (t.row() >= n) {
-      if (n_max >= 0)
-        break;
-
-      // Estimate rows in full dataset
-      n = (i / tokenizer->progress().first) * 1.2;
-      collectorsResize(collectors, n);
-    }
-
-    if (t.col() < p)
-      collectors[t.col()]->setValue(t.row(), t);
-
-    i = t.row();
-    j = t.col();
-  }
-  if (i != -1)
-    checkColumns(&warnings, i, j, p);
-
-  if (progress)
-    progressBar.show(tokenizer->progress());
-  progressBar.stop();
-
-  if (i != (int) n - 1) {
-    collectorsResize(collectors, i + 1);
-  }
-
-  // Save individual columns into a data frame
-  List out(pOut);
-  j = 0;
-  for(CollectorItr cur = collectors.begin(); cur != collectors.end(); ++cur) {
-    if ((*cur)->skip())
-      continue;
-
-    out[j] = (*cur)->vector();
-    j++;
-  }
-
-  out.attr("class") = CharacterVector::create("tbl_df", "tbl", "data.frame");
-  out.attr("row.names") = IntegerVector::create(NA_INTEGER, -(i + 1));
-  out.attr("names") = outNames;
-
-  return warnings.addAsAttribute(out);
+  return r.readToDataFrame(n_max);
 }
 
+// [[Rcpp::export]]
+void read_tokens_chunked_(List sourceSpec, Environment callback, int chunkSize,
+    List tokenizerSpec, ListOf<List> colSpecs, CharacterVector colNames,
+    List locale_, bool progress = true) {
+
+  LocaleInfo l(locale_);
+  Reader r(
+    Source::create(sourceSpec),
+    Tokenizer::create(tokenizerSpec),
+    collectorsCreate(colSpecs, &l),
+    progress,
+    colNames);
+
+  DataFrame out;
+
+  int pos = 1;
+  while (R6method(callback, "continue")() &&
+      (out = r.readToDataFrame(chunkSize)).nrows()) {
+    R6method(callback, "receive")(out, pos);
+    pos += out.nrows();
+  }
+
+  return;
+}
 
 // [[Rcpp::export]]
 std::vector<std::string> guess_types_(List sourceSpec, List tokenizerSpec,
@@ -253,5 +164,3 @@ std::vector<std::string> guess_types_(List sourceSpec, List tokenizerSpec,
 
   return out;
 }
-
-

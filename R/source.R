@@ -20,9 +20,9 @@
 #' datasource(charToRaw("a,b,c\n1,2,3"))
 #'
 #' # Strings
-#' datasource(system.file("extdata/mtcars.csv", package = "readr"))
-#' datasource(system.file("extdata/mtcars.csv.bz2", package = "readr"))
-#' datasource(system.file("extdata/mtcars.csv.zip", package = "readr"))
+#' datasource(readr_example("mtcars.csv"))
+#' datasource(readr_example("mtcars.csv.bz2"))
+#' datasource(readr_example("mtcars.csv.zip"))
 #' datasource("https://github.com/hadley/readr/raw/master/inst/extdata/mtcars.csv")
 #'
 #' # Connection
@@ -157,4 +157,8 @@ zipfile <- function(path, open = "r") {
   }
 
   unz(path, file, open = open)
+}
+
+empty_file <- function(x) {
+  is.character(x) && file.exists(x) && file.info(x, extra_cols = FALSE)$size == 0
 }

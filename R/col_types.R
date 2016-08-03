@@ -56,43 +56,145 @@ col_spec <- function(col_types, default = col_guess()) {
 
 is.col_spec <- function(x) inherits(x, "col_spec")
 
-#' @export
-print.col_spec <- function(x, ...) {
-  cat("<col_spec>\n")
-
-  col_class <- function(x) gsub("collector_", "", class(x)[[1]])
-
-  cols <- x$cols
-  class <- vapply(cols, col_class, character(1))
-  if (length(cols) > 0) {
-    if (is.null(names(cols))) {
-      cat(paste0("* ", class, collapse = "\n"), "\n", sep = "")
-    } else {
-      cat(paste0("* ", names(cols), ": ", class, collapse = "\n"), "\n", sep = "")
-    }
-  }
-  cat("* default: ", col_class(x$default), "\n", sep = "")
-}
-
 as.col_spec <- function(x) UseMethod("as.col_spec")
+
 #' @export
 as.col_spec.character <- function(x) {
   letters <- strsplit(x, "")[[1]]
   col_spec(lapply(letters, col_concise), col_guess())
 }
+
 #' @export
 as.col_spec.NULL <- function(x) {
   col_spec(list())
 }
+
 #' @export
 as.col_spec.list <- function(x) {
-  col_spec(x)
+  do.call(cols, x)
 }
 #' @export
 as.col_spec.col_spec <- function(x) x
+
 #' @export
 as.col_spec.default <- function(x) {
   stop("`col_types` must be NULL, a list or a string", call. = FALSE)
+}
+
+#' @export
+print.col_spec <- function(x, n = Inf, condense = NULL, ...) {
+  cat(format.col_spec(x, n = n, condense = condense, ...))
+
+  invisible(x)
+}
+
+#' @rdname spec
+#' @export
+cols_condense <- function(x) {
+  types <- vapply(x$cols, function(xx) class(xx)[[1]], character(1))
+  counts <- table(types)
+  most_common <- names(counts)[counts == max(counts)][[1]]
+
+  x$default <- x$cols[types == most_common][[1]]
+  x$cols <- x$cols[types != most_common]
+  x
+}
+
+#' @export
+format.col_spec <- function(x, n = Inf, condense = NULL, ...) {
+
+  if (n == 0) {
+    return("")
+  }
+
+  # condense if cols >= n
+  condense <- condense %||% (length(x$cols) >= n)
+  if (isTRUE(condense)) {
+    x <- cols_condense(x)
+  }
+
+  # truncate to minumum of n or length
+  cols <- x$cols[seq_len(min(length(x$cols), n))]
+
+  default <- NULL
+  if (inherits(x$default, "collector_guess")) {
+    fun_type <- "cols"
+  } else if (inherits(x$default, "collector_skip")) {
+    fun_type <- "cols_only"
+  } else {
+    fun_type <- "cols"
+    type <- sub("^collector_", "", class(x$default)[[1]])
+    default <- paste0(".default = col_", type, "()")
+  }
+
+  cols_args <- c(default,
+    vapply(seq_along(cols),
+      function(i) {
+        col_funs <- sub("^collector_", "col_", class(cols[[i]])[[1]])
+        args <- vapply(cols[[i]], deparse, character(1))
+        args <- paste(names(args), args, sep = " = ", collapse = ", ")
+
+        col_names <- names(cols)[[i]]
+
+        # Need to handle unnamed columns and columns with non-syntactic names
+        named <- col_names != ""
+
+        non_syntactic <- !is_syntactic(col_names) & named
+        col_names[non_syntactic] <- paste0("`", gsub("`", "\\\\`", col_names[non_syntactic]), "`")
+
+        out <- paste0(col_names, " = ", col_funs, "(", args, ")")
+        out[!named] <- paste0(col_funs, "(", args, ")")
+        out
+      },
+      character(1)
+    )
+  )
+  if (length(x$cols) == 0 && length(cols_args) == 0) {
+    return(paste0(fun_type, "()\n"))
+  }
+
+
+  out <- paste0(fun_type, "(\n  ", paste(collapse = ",\n  ", cols_args))
+
+  if (length(x$cols) > n) {
+    out <- paste0(out, "\n  # ... with ", length(x$cols) - n, " more columns")
+  }
+  out <- paste0(out, "\n)\n")
+
+  out
+}
+
+# Used in read_delim(), read_fwf() and type_convert()
+show_cols_spec <- function(spec, n = getOption("readr.num_columns", 20)) {
+  if (n > 0) {
+    message("Parsed with column specification:\n",
+      format(spec, n = n, condense = NULL), appendLF = FALSE)
+    if (length(spec$cols) >= n) {
+      message("See spec(...) for full column specifications.")
+    }
+  }
+}
+
+
+#' Examine the column specifications for a data frame
+#'
+#' \code{\link{spec}} extracts the full column specifications.
+#' \code{\link{cols_condense}} takes a spec object and condenses its definition
+#' by setting the default column type to the most frequent type and only
+#' listing columns with a different type.
+#'
+#' @param x The data frame object to extract from
+#' @return A col_spec object.
+#' @export
+#' @examples
+#' df <- read_csv(readr_example("mtcars.csv"))
+#' s <- spec(df)
+#' s
+#'
+#' cols_condense(s)
+spec <- function(x) {
+  stopifnot(inherits(x, "tbl_df"))
+  attr(x, "spec")
 }
 
 col_concise <- function(x) {
@@ -115,25 +217,58 @@ col_concise <- function(x) {
 
 col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
                                  guessed_types = NULL,
-                                 comment = "", skip = 0, n_max = -1,
+                                 comment = "", skip = 0, n = 1000,
                                  tokenizer = tokenizer_csv(),
-                                 locale = default_locale()) {
+                                 locale = default_locale(),
+                                 drop_skipped_names = FALSE) {
 
   # Figure out the column names -----------------------------------------------
   if (is.logical(col_names) && length(col_names) == 1) {
     ds_header <- datasource(file, skip = skip, comment = comment)
     if (col_names) {
       col_names <- guess_header(ds_header, tokenizer, locale)
+      skip <- skip + 1
     } else {
       n <- length(guess_header(ds_header, tokenizer, locale))
       col_names <- paste0("X", seq_len(n))
     }
     guessed_names <- TRUE
-    skip <- skip + 1
   } else if (is.character(col_names)) {
     guessed_names <- FALSE
   } else {
     stop("`col_names` must be TRUE, FALSE or a character vector", call. = FALSE)
+  }
+
+  missing_names <- is.na(col_names)
+  if (any(missing_names)) {
+    new_names <- paste0("X", seq_along(col_names)[missing_names])
+    col_names[missing_names] <- new_names
+    warning(
+      "Missing column names filled in: ",
+      paste0(
+        encodeString(new_names, quote = "'"),
+        " [", which(missing_names), "]",
+        collapse = ", "
+      ), call. = FALSE
+    )
+  }
+
+  if (anyDuplicated(col_names)) {
+    dups <- duplicated(col_names)
+
+    old_names <- col_names
+    col_names <- make.unique(col_names, sep = "_")
+
+    warning(
+      "Duplicated column names deduplicated: ",
+      paste0(
+        encodeString(old_names[dups], quote = "'"),
+        " => ",
+        encodeString(col_names[dups], quote = "'"),
+        " [", which(dups), "]",
+        collapse = ", "
+      ), call. = FALSE
+    )
   }
 
   # Figure out column types ----------------------------------------------------
@@ -152,7 +287,7 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
     if (length(spec$cols) != length(col_names)) {
       warning("Unnamed `col_types` should have the same length as `col_names`. ",
         "Using smaller of the two.", call. = FALSE)
-      n <- min(length(col_names), length(col_types))
+      n <- min(length(col_names), length(spec$cols))
       spec$cols <- spec$cols[seq_len(n)]
       col_names <- col_names[seq_len(n)]
     }
@@ -162,6 +297,13 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
     # unnamed types & names supplied: match non-skipped columns
     skipped <- vapply(spec$cols, inherits, "collector_skip",
       FUN.VALUE = logical(1))
+
+    # Needed for read_fwf() because width generator functions have name for
+    # every column, even those that are skipped. Not need for read_delim()
+    if (drop_skipped_names) {
+      col_names <- col_names[!skipped]
+    }
+
     n_read <- sum(!skipped)
     n_names <- length(col_names)
 
@@ -173,7 +315,10 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
     } else if (n_read > n_names) {
       warning("Insufficient `col_names`. Adding ", n_new, " names.",
         call. = FALSE)
-      col_names <- c(col_names, paste0("X", seq_len(n_new) + n_read - 1))
+
+      col_names2 <- rep("", length(spec$cols))
+      col_names2[!skipped] <- c(col_names, paste0("X", seq_len(n_new) + n_names))
+      col_names <- col_names2
     } else {
       col_names2 <- rep("", length(spec$cols))
       col_names2[!skipped] <- col_names
@@ -207,7 +352,7 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
   if (any(is_guess)) {
     if (is.null(guessed_types)) {
       ds <- datasource(file, skip = skip, comment = comment)
-      guessed_types <- guess_types(ds, tokenizer, locale, n_max = n_max)
+      guessed_types <- guess_types(ds, tokenizer, locale, n = n)
     }
 
     # Need to be careful here: there might be more guesses than types/names
@@ -215,13 +360,10 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
     spec$cols[is_guess] <- lapply(guesses, collector_find)
   }
 
-  spec$cols
+  spec
 }
 
-guess_types <- function(datasource, tokenizer, locale, n = 1000, n_max = -1) {
-  if (n_max > 0) {
-    n <- min(n, n_max)
-  }
+guess_types <- function(datasource, tokenizer, locale, n = 1000) {
   guess_types_(datasource, tokenizer, locale, n = n)
 }
 

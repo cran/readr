@@ -37,31 +37,55 @@ read_file_ <- function(sourceSpec, locale_) {
     .Call('readr_read_file_', PACKAGE = 'readr', sourceSpec, locale_)
 }
 
-read_lines_ <- function(sourceSpec, locale_, n_max = -1L, progress = TRUE) {
-    .Call('readr_read_lines_', PACKAGE = 'readr', sourceSpec, locale_, n_max, progress)
+read_file_raw_ <- function(sourceSpec) {
+    .Call('readr_read_file_raw_', PACKAGE = 'readr', sourceSpec)
+}
+
+read_lines_ <- function(sourceSpec, locale_, na, n_max = -1L, progress = TRUE) {
+    .Call('readr_read_lines_', PACKAGE = 'readr', sourceSpec, locale_, na, n_max, progress)
+}
+
+read_lines_chunked_ <- function(sourceSpec, locale_, na, chunkSize, callback, progress = TRUE) {
+    invisible(.Call('readr_read_lines_chunked_', PACKAGE = 'readr', sourceSpec, locale_, na, chunkSize, callback, progress))
 }
 
 read_lines_raw_ <- function(sourceSpec, n_max = -1L, progress = FALSE) {
     .Call('readr_read_lines_raw_', PACKAGE = 'readr', sourceSpec, n_max, progress)
 }
 
-read_tokens <- function(sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max = -1L, progress = TRUE) {
-    .Call('readr_read_tokens', PACKAGE = 'readr', sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max, progress)
+read_tokens_ <- function(sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max = -1L, progress = TRUE) {
+    .Call('readr_read_tokens_', PACKAGE = 'readr', sourceSpec, tokenizerSpec, colSpecs, colNames, locale_, n_max, progress)
+}
+
+read_tokens_chunked_ <- function(sourceSpec, callback, chunkSize, tokenizerSpec, colSpecs, colNames, locale_, progress = TRUE) {
+    invisible(.Call('readr_read_tokens_chunked_', PACKAGE = 'readr', sourceSpec, callback, chunkSize, tokenizerSpec, colSpecs, colNames, locale_, progress))
 }
 
 guess_types_ <- function(sourceSpec, tokenizerSpec, locale_, n = 100L) {
     .Call('readr_guess_types_', PACKAGE = 'readr', sourceSpec, tokenizerSpec, locale_, n)
 }
 
-whitespaceColumns <- function(sourceSpec, n = 100L) {
-    .Call('readr_whitespaceColumns', PACKAGE = 'readr', sourceSpec, n)
+whitespaceColumns <- function(sourceSpec, n = 100L, comment = "") {
+    .Call('readr_whitespaceColumns', PACKAGE = 'readr', sourceSpec, n, comment)
 }
 
 type_convert_col <- function(x, spec, locale_, col, na, trim_ws) {
     .Call('readr_type_convert_col', PACKAGE = 'readr', x, spec, locale_, col, na, trim_ws)
 }
 
-stream_delim <- function(df, path, delim, na, col_names = TRUE, append = FALSE) {
-    .Call('readr_stream_delim', PACKAGE = 'readr', df, path, delim, na, col_names, append)
+stream_delim <- function(df, path, delim, na, col_names = TRUE, append = FALSE, bom = FALSE) {
+    .Call('readr_stream_delim', PACKAGE = 'readr', df, path, delim, na, col_names, append, bom)
+}
+
+write_lines_ <- function(lines, path, na, append = FALSE) {
+    invisible(.Call('readr_write_lines_', PACKAGE = 'readr', lines, path, na, append))
+}
+
+write_file_raw_ <- function(x, path, append = FALSE) {
+    invisible(.Call('readr_write_file_raw_', PACKAGE = 'readr', x, path, append))
+}
+
+write_file_ <- function(x, path, append = FALSE) {
+    invisible(.Call('readr_write_file_', PACKAGE = 'readr', x, path, append))
 }
 

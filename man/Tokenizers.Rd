@@ -10,18 +10,19 @@
 \alias{tokenizer_tsv}
 \title{Tokenizers.}
 \usage{
-tokenizer_delim(delim, quote = "\\"", na = "NA", comment = "",
-  trim_ws = TRUE, escape_double = TRUE, escape_backslash = FALSE)
+tokenizer_delim(delim, quote = "\\"", na = "NA", quoted_na = TRUE,
+  comment = "", trim_ws = TRUE, escape_double = TRUE,
+  escape_backslash = FALSE)
 
-tokenizer_csv(na = "NA", comment = "", trim_ws = TRUE)
+tokenizer_csv(na = "NA", quoted_na = TRUE, comment = "", trim_ws = TRUE)
 
-tokenizer_tsv(na = "NA", comment = "", trim_ws = TRUE)
+tokenizer_tsv(na = "NA", quoted_na = TRUE, comment = "", trim_ws = TRUE)
 
-tokenizer_line()
+tokenizer_line(na = character())
 
 tokenizer_log()
 
-tokenizer_fwf(begin, end, na = "NA")
+tokenizer_fwf(begin, end, na = "NA", comment = "")
 }
 \arguments{
 \item{delim}{Single character used to separate fields within a record.}
@@ -30,6 +31,9 @@ tokenizer_fwf(begin, end, na = "NA")
 
 \item{na}{Character vector of strings to use for missing values. Set this
 option to \code{character()} to indicate no missing values.}
+
+\item{quoted_na}{Should missing values inside quotes be treated as missing
+values (the default) or strings.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}

@@ -8,10 +8,13 @@
 
 class TokenizerLine : public Tokenizer {
   SourceIterator begin_, cur_, end_;
+  std::vector<std::string> NA_;
   bool moreTokens_;
   int line_;
 
 public:
+
+  TokenizerLine(std::vector<std::string> NA): NA_(NA), moreTokens_(false) {}
 
   TokenizerLine(): moreTokens_(false) {}
 
@@ -47,8 +50,11 @@ public:
 
       switch(*cur_) {
       case '\r':
-      case '\n':
-        return Token(token_begin, advanceForLF(&cur_, end_), hasNull, line_++, 0);
+      case '\n': {
+        Token t = Token(token_begin, advanceForLF(&cur_, end_), line_++, 0, hasNull);
+        t.flagNA(NA_);
+        return t;
+      }
       default:
         break;
       }
@@ -59,7 +65,9 @@ public:
     if (token_begin == end_) {
       return Token(TOKEN_EOF, line_++, 0);
     } else {
-      return Token(token_begin, end_, hasNull, line_++, 0);
+      Token t = Token(token_begin, end_, line_++, 0, hasNull);
+      t.flagNA(NA_);
+      return t;
     }
   }
 

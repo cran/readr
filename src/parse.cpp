@@ -68,7 +68,9 @@ RObject guess_header_(List sourceSpec, List tokenizerSpec, List locale_) {
       out.resize(t.col() + 1);
     }
 
-    out.setValue(t.col(), t);
+    if (t.type() == TOKEN_STRING) {
+      out.setValue(t.col(), t);
+    }
   }
 
   return out.vector();

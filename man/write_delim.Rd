@@ -7,6 +7,7 @@
 \alias{output_column}
 \alias{write_csv}
 \alias{write_delim}
+\alias{write_excel_csv}
 \alias{write_tsv}
 \title{Save a data frame to a delimited file.}
 \usage{
@@ -14,6 +15,8 @@ write_delim(x, path, delim = " ", na = "NA", append = FALSE,
   col_names = !append)
 
 write_csv(x, path, na = "NA", append = FALSE, col_names = !append)
+
+write_excel_csv(x, path, na = "NA", append = FALSE, col_names = !append)
 
 write_tsv(x, path, na = "NA", append = FALSE, col_names = !append)
 
@@ -44,7 +47,7 @@ file is created.}
 \item{col_names}{Write columns names at the top of the file?}
 }
 \value{
-\code{write_*} returns in the input \code{x} invisibily,
+\code{write_*} returns the input \code{x} invisibly,
   \code{format_*} returns a string.
 }
 \description{
@@ -54,14 +57,14 @@ columns to suitable output.
 }
 \section{Output}{
 
-Factors are coerced to character. Doubles are coerced to character to
-take advantage of R's nice output for doubles. POSIXct's are formatted
-as ISO8601.
+Factors are coerced to character. Doubles are formatted using the grisu3
+algorithm. POSIXct's are formatted as ISO8601.
 
-All columns are encoded as UTF-8.
+All columns are encoded as UTF-8. \code{write_excel_csv} also includes a
+\href{https://en.wikipedia.org/wiki/Byte_order_mark}{UTF-8 Byte order mark}
+which indicates to Excel the csv is UTF-8 encoded.
 
 Values are only quoted if needed: if they contain a comma, quote or newline.
-
 }
 \examples{
 tmp <- tempfile()
@@ -79,5 +82,10 @@ format_csv(df, na = ".")
 # Quotes are automatically as needed
 df <- data.frame(x = c("a", '"', ",", "\\n"))
 cat(format_csv(df))
+}
+\references{
+Florian Loitsch, Printing Floating-Point Numbers Quickly and
+Accurately with Integers, PLDI '10,
+\url{http://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf}
 }
 

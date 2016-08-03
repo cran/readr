@@ -9,28 +9,31 @@
 \alias{parse_time}
 \title{Parse a character vector of dates or date times.}
 \usage{
-parse_datetime(x, format = "", locale = default_locale())
+parse_datetime(x, format = "", na = c("", "NA"),
+  locale = default_locale())
+
+parse_date(x, format = "", na = c("", "NA"), locale = default_locale())
+
+parse_time(x, format = "", na = c("", "NA"), locale = default_locale())
 
 col_datetime(format = "")
 
-parse_date(x, format = "\%Y-\%m-\%d", locale = default_locale())
-
-col_date(format = NULL)
-
-parse_time(x, format = "", locale = default_locale())
+col_date(format = "")
 
 col_time(format = "")
 }
 \arguments{
 \item{x}{A character vector of dates to parse.}
 
-\item{format}{A format specification, as described below. If omitted,
-  parses dates according to the ISO8601 specification (with caveats,
-  as described below). Times are parsed like ISO8601 times, but also
-  accept an optional am/pm specification.
+\item{format}{A format specification, as described below. If set to "",
+  date times are parsed as ISO8601, dates and times used the date and
+  time formats specified in the \code{\link{locale}}.
 
   Unlike \code{\link{strptime}}, the format specification must match
   the complete string.}
+
+\item{na}{Character vector of strings to use for missing values. Set this
+option to \code{character()} to indicate no missing values.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
 The default locale is US-centric (like R), but you can use
@@ -55,7 +58,8 @@ There are three types of element:
 \enumerate{
   \item Date components are specified with "\%" followed by a letter.
     For example "\%Y" matches a 4 digit year, "\%m", matches a 2 digit
-    month and "\%d" matches a 2 digit day.
+    month and "\%d" matches a 2 digit day. Month and day default to \code{1},
+    (i.e. Jan 1st) if not present, for example if only a year is given.
   \item Whitespace is any sequence of zero or more whitespace characters.
   \item Any other character is matched exactly.
 }
@@ -76,10 +80,11 @@ There are three types of element:
   \item Non-digits: "\%." skips one non-digit character,
     "\%+" skips one or more non-digit characters,
     "\%*" skips any number of non-digits characters.
+  \item Automatic parsers: "\%AD" parses with a flexible YMD parser,
+     "\%AT" parses with a flexible HMS parser.
   \item Shortcuts: "\%D" = "\%m/\%d/\%y",  "\%F" = "\%Y-\%m-\%d",
       "\%R" = "\%H:\%M", "\%T" = "\%H:\%M:\%S",  "\%x" = "\%y/\%m/\%d".
 }
-
 }
 
 \section{ISO8601 support}{
@@ -99,7 +104,6 @@ The parser is also a little laxer than ISO8601:
 \item Dates and times can be separated with a space, not just T.
 \item Mostly correct specifications like "2009-05-19 14:" and  "200912-01" work.
 }
-
 }
 \examples{
 # Format strings --------------------------------------------------------
@@ -160,5 +164,10 @@ parse_datetime("1979-10-14T1010-0500", locale = us_central)
 parse_datetime("1979-10-14T1010Z", locale = us_central)
 # Your current time zone
 parse_datetime("1979-10-14T1010", locale = locale(tz = ""))
+}
+\seealso{
+Other parser: \code{\link{parse_atomic}},
+  \code{\link{parse_factor}}, \code{\link{parse_guess}},
+  \code{\link{parse_number}}
 }
 
