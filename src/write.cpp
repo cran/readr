@@ -2,14 +2,12 @@
 using namespace Rcpp;
 #include <ostream>
 #include <fstream>
+#include "write_connection.h"
+#include <boost/iostreams/stream.hpp> // stream
 
 // [[Rcpp::export]]
-void write_lines_(const CharacterVector &lines, const std::string &path, const std::string& na, bool append = false) {
-
-  std::ofstream output(path.c_str(), std::ofstream::binary | (append ? std::ofstream::app : std::ofstream::trunc));
-  if (output.fail()) {
-    stop("Failed to open '%s'.", path);
-  }
+void write_lines_(const CharacterVector &lines, RObject connection, const std::string& na) {
+  boost::iostreams::stream<connection_sink> output(connection);
   for (CharacterVector::const_iterator i = lines.begin(); i != lines.end(); ++i) {
 
     if (CharacterVector::is_na(*i)) {
@@ -23,27 +21,32 @@ void write_lines_(const CharacterVector &lines, const std::string &path, const s
 }
 
 // [[Rcpp::export]]
-void write_file_raw_(RawVector x, const std::string &path, bool append = false) {
-  std::ofstream output(path.c_str(), std::ofstream::binary | (append ? std::ofstream::app : std::ofstream::trunc));
+void write_lines_raw_(List x, RObject connection) {
 
-  if (output.fail()) {
-    stop("Failed to open '%s'.", path);
+  boost::iostreams::stream<connection_sink> output(connection);
+
+  for (int i = 0;i < x.length();++i) {
+    RawVector y = x.at(i);
+    output.write(reinterpret_cast<const char*>(&y[0]), y.size() * sizeof(y[0]));
+    output << '\n';
   }
-
-  std::copy(x.begin(), x.end(), std::ostream_iterator<char>(output));
 
   return;
 }
 
 // [[Rcpp::export]]
-void write_file_(std::string x, const std::string &path, bool append = false) {
-  std::ofstream output(path.c_str(), std::ofstream::binary | (append ? std::ofstream::app : std::ofstream::trunc));
+void write_file_(std::string x, RObject connection) {
+  boost::iostreams::stream<connection_sink> out(connection);
 
-  if (output.fail()) {
-    stop("Failed to open '%s'.", path);
-  }
+  out << x;
+  return;
+}
 
-  std::copy(x.begin(), x.end(), std::ostream_iterator<char>(output));
+// [[Rcpp::export]]
+void write_file_raw_(RawVector x, RObject connection) {
 
+  boost::iostreams::stream<connection_sink> output(connection);
+
+  output.write(reinterpret_cast<const char*>(&x[0]), x.size() * sizeof(x[0]));
   return;
 }

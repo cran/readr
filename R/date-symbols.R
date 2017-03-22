@@ -5,8 +5,8 @@
 #' create your own, or retrieve from a standard list. The standard list is
 #' derived from ICU (\url{http://site.icu-project.org}) via the stringi package.
 #'
-#' @param mon,mon_ab Full and abbreviated month names. Starts with Sunday.
-#' @param day,day_ab Full and abbreviated week day names
+#' @param mon,mon_ab Full and abbreviated month names.
+#' @param day,day_ab Full and abbreviated week day names. Starts with Sunday.
 #' @param am_pm Names used for AM and PM.
 #' @export
 #' @examples
@@ -35,7 +35,7 @@ date_names <- function(mon, mon_ab = mon, day, day_ab = day,
 #' @export
 #' @rdname date_names
 #' @param language A BCP 47 locale, made up of a languge and a region,
-#'   e.g. \code{en_US} for American English. See \code{date_names_locales()}
+#'   e.g. `"en_US"` for American English. See `date_names_locales()`
 #'   for a complete list of available locales.
 date_names_lang <- function(language) {
   stopifnot(is.character(language), length(language) == 1)

@@ -1,12 +1,12 @@
-#' Count the number of fields in each line of a file.
+#' Count the number of fields in each line of a file
 #'
 #' This is useful for diagnosing problems with functions that fail
 #' to parse correctly.
 #'
 #' @inheritParams datasource
-#' @param tokenizer A tokenizer that specifies how to break the \code{file}
-#'   up into fields, e.g., \code{\link{tokenizer_csv}},
-#'   \code{\link{tokenizer_fwf}}
+#' @param tokenizer A tokenizer that specifies how to break the `file`
+#'   up into fields, e.g., [tokenizer_csv()],
+#'   [tokenizer_fwf()]
 #' @param n_max Optionally, maximum number of rows to count fields for.
 #' @export
 #' @examples

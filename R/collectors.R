@@ -37,17 +37,18 @@ parse_vector <- function(x, collector, na = c("", "NA"), locale = default_locale
   warn_problems(parse_vector_(x, collector, na = na, locale_ = locale))
 }
 
-#' Parse character vector in an atomic vector.
+#' Parse logicals, integers, and reals
 #'
-#' Use \code{parse_} if you have a character vector you want to parse. Use
-#' \code{col_} in conjunction with a \code{read_} function to parse the
+#' Use `parse_*()` if you have a character vector you want to parse. Use
+#' `col_*()` in conjunction with a `read_*()` function to parse the
 #' values as they're read in.
 #'
 #' @name parse_atomic
+#' @aliases NULL
 #' @param x Character vector of values to parse.
 #' @inheritParams tokenizer_delim
 #' @inheritParams read_delim
-#' @family parser
+#' @family parsers
 #' @examples
 #' parse_integer(c("1", "2", "3"))
 #' parse_double(c("1", "2", "3.123"))
@@ -112,13 +113,18 @@ col_character <- function() {
   collector("character")
 }
 
-#' @rdname parse_atomic
+#' Skip a column
+#'
+#' Use this function to ignore a column when reading in a file.
+#' To skip all columns not otherwise specified, use \code{\link{cols_only}()}.
+#'
+#' @family parsers
 #' @export
 col_skip <- function() {
   collector("skip")
 }
 
-#' Extract numbers out of an atomic vector
+#' Parse numbers, flexibly
 #'
 #' This drops any non-numeric characters before or after the first number.
 #' The grouping mark specified by the locale is ignored inside the number.
@@ -126,7 +132,7 @@ col_skip <- function() {
 #' @inheritParams parse_atomic
 #' @inheritParams tokenizer_delim
 #' @inheritParams read_delim
-#' @family parser
+#' @family parsers
 #' @export
 #' @examples
 #' parse_number("$1000")
@@ -142,9 +148,9 @@ col_number <- function() {
 }
 
 
-#' Parse a character vector into the "best" type.
+#' Parse using the "best" type
 #'
-#' \code{parse_guess()} returns the parser vector; \code{guess_parser()}
+#' `parse_guess()` returns the parser vector; `guess_parser()`
 #' returns the name of the parser. These functions use a number of heuristics
 #' to determine which type of vector is "best". Generally they try to err of
 #' the side of safety, as it's straightforward to override the parsing choice
@@ -153,7 +159,7 @@ col_number <- function() {
 #' @inheritParams parse_atomic
 #' @inheritParams tokenizer_delim
 #' @inheritParams read_delim
-#' @family parser
+#' @family parsers
 #' @export
 #' @examples
 #' # Logical vectors
@@ -187,53 +193,71 @@ guess_parser <- function(x, locale = default_locale()) {
   collectorGuess(x, locale)
 }
 
-#' Parse a character vector into a factor
+#' Parse factors
 #'
-#' @param levels Character vector providing set of allowed levels.
+#' `parse_factor` is similar to [factor()], but will generate
+#' warnings if elements of `x` are not found in `levels`.
+#'
+#' @param levels Character vector providing set of allowed levels. if `NULL`,
+#'   will generate levels based on the unique values of `x`, ordered by order
+#'   of appearance in `x`.
 #' @param ordered Is it an ordered factor?
+#' @param include_na If `NA` are present, include as an explicit factor to level?
 #' @inheritParams parse_atomic
 #' @inheritParams tokenizer_delim
 #' @inheritParams read_delim
-#' @family parser
+#' @family parsers
 #' @export
 #' @examples
 #' parse_factor(c("a", "b"), letters)
+#'
+#' x <- c("cat", "dog", "caw")
+#' levels <- c("cat", "dog", "cow")
+#'
+#' # Base R factor() silently converts unknown levels to NA
+#' x1 <- factor(x, levels)
+#'
+#' # parse_factor generates a warning & problems
+#' x2 <- parse_factor(x, levels)
+#'
+#' # Using an argument of `NULL` will generate levels based on values of `x`
+#' x2 <- parse_factor(x, levels = NULL)
 parse_factor <- function(x, levels, ordered = FALSE, na = c("", "NA"),
-                         locale = default_locale()) {
-  parse_vector(x, col_factor(levels, ordered), na = na, locale = locale)
+                         locale = default_locale(), include_na = TRUE) {
+  parse_vector(x, col_factor(levels, ordered, include_na), na = na, locale = locale)
 }
 
 #' @rdname parse_factor
 #' @export
-col_factor <- function(levels, ordered = FALSE) {
-  collector("factor", levels = levels, ordered = ordered)
+col_factor <- function(levels, ordered = FALSE, include_na = FALSE) {
+  collector("factor", levels = levels, ordered = ordered, include_na = include_na)
 }
 
 # More complex ------------------------------------------------------------
 
-#' Parse a character vector of dates or date times.
+#' Parse date/times
 #'
 #' @section Format specification:
-#' \code{readr} uses a format specification similiar to \code{\link{strptime}}.
+#' `readr` uses a format specification similar to [strptime()].
 #' There are three types of element:
 #'
 #' \enumerate{
 #'   \item Date components are specified with "\%" followed by a letter.
 #'     For example "\%Y" matches a 4 digit year, "\%m", matches a 2 digit
-#'     month and "\%d" matches a 2 digit day. Month and day default to \code{1},
+#'     month and "\%d" matches a 2 digit day. Month and day default to `1`,
 #'     (i.e. Jan 1st) if not present, for example if only a year is given.
 #'   \item Whitespace is any sequence of zero or more whitespace characters.
 #'   \item Any other character is matched exactly.
 #' }
 #'
-#' \code{parse_datetime} recognises the following format specifications:
+#' `parse_datetime()` recognises the following format specifications:
 #' \itemize{
 #'   \item Year: "\%Y" (4 digits). "\%y" (2 digits); 00-69 -> 2000-2069,
 #'     70-99 -> 1970-1999.
 #'   \item Month: "\%m" (2 digits), "\%b" (abbreviated name in current
 #'     locale), "\%B" (full name in current locale).
 #'   \item Day: "\%d" (2 digits), "\%e" (optional leading space)
-#'   \item Hour: "\%H"
+#'   \item Hour: "\%H" or "\%I", use I (and not H) with AM/PM.
 #'   \item Minutes: "\%M"
 #'   \item Seconds: "\%S" (integer seconds), "\%OS" (partial seconds)
 #'   \item Time zone: "\%Z" (as name, e.g. "America/Chicago"), "\%z" (as
@@ -268,17 +292,17 @@ col_factor <- function(levels, ordered = FALSE) {
 #' @param x A character vector of dates to parse.
 #' @param format A format specification, as described below. If set to "",
 #'   date times are parsed as ISO8601, dates and times used the date and
-#'   time formats specified in the \code{\link{locale}}.
+#'   time formats specified in the [locale()].
 #'
-#'   Unlike \code{\link{strptime}}, the format specification must match
+#'   Unlike [strptime()], the format specification must match
 #'   the complete string.
 #' @inheritParams read_delim
 #' @inheritParams tokenizer_delim
-#' @return A \code{\link{POSIXct}} vector with \code{tzone} attribute set to
-#'   \code{tz}. Elements that could not be parsed (or did not generate valid
-#'   dates) will bes set to \code{NA}, and a warning message will inform
+#' @return A [POSIXct()] vector with `tzone` attribute set to
+#'   `tz`. Elements that could not be parsed (or did not generate valid
+#'   dates) will bes set to `NA`, and a warning message will inform
 #'   you of the total number of failures.
-#' @family parser
+#' @family parsers
 #' @export
 #' @examples
 #' # Format strings --------------------------------------------------------
@@ -372,38 +396,3 @@ col_date <- function(format = "") {
 col_time <- function(format = "") {
   collector("time", format = format)
 }
-
-# Deprecated --------------------------------------------------------------
-
-#' @rdname parse_atomic
-#' @export
-#' @usage NULL
-col_euro_double <- function() {
-  warning("Deprecated: please set locale")
-  collector("double")
-}
-
-#' @rdname parse_atomic
-#' @export
-#' @usage NULL
-parse_euro_double <- function(x, na = c("", "NA")) {
-  warning("Deprecated: please set locale")
-  parse_vector(x, col_double(), na = na)
-}
-
-#' @rdname parse_atomic
-#' @usage NULL
-#' @export
-col_numeric <- function() {
-  warning("Deprecated: please use `col_number()`")
-  collector("number")
-}
-
-#' @rdname parse_atomic
-#' @usage NULL
-#' @export
-parse_numeric <- function(x, na = c("", "NA"), locale = default_locale()) {
-  warning("Deprecated: please use `parse_number()`")
-  parse_vector(x, col_number(), na = na, locale = locale)
-}
-

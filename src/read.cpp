@@ -46,6 +46,12 @@ CharacterVector read_lines_(List sourceSpec, List locale_,
 Function R6method(Environment env, const std::string& method) {
   return as<Function>(env[method]);
 }
+bool isTrue(SEXP x) {
+  if (!(TYPEOF(x) == LGLSXP && Rf_length(x) == 1)) {
+    stop("`continue()` must return a length 1 logical vector");
+  }
+  return LOGICAL(x)[0] == TRUE;
+}
 
 // [[Rcpp::export]]
 void read_lines_chunked_(List sourceSpec, List locale_,
@@ -62,8 +68,11 @@ void read_lines_chunked_(List sourceSpec, List locale_,
   CharacterVector out;
 
   int pos = 1;
-  while (R6method(callback, "continue")() &&
-      (out = r.readToVector<CharacterVector>(chunkSize)).size()) {
+  while (isTrue(R6method(callback, "continue")())) {
+    CharacterVector out = r.readToVector<CharacterVector>(chunkSize);
+    if (out.size() == 0) {
+      return;
+    }
     R6method(callback, "receive")(out, pos);
     pos += out.size();
   }
@@ -114,11 +123,12 @@ void read_tokens_chunked_(List sourceSpec, Environment callback, int chunkSize,
     progress,
     colNames);
 
-  DataFrame out;
-
   int pos = 1;
-  while (R6method(callback, "continue")() &&
-      (out = r.readToDataFrame(chunkSize)).nrows()) {
+  while (isTrue(R6method(callback, "continue")())) {
+    DataFrame out = r.readToDataFrame(chunkSize);
+    if (out.nrows() == 0) {
+      return;
+    }
     R6method(callback, "receive")(out, pos);
     pos += out.nrows();
   }

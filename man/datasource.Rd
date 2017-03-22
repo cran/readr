@@ -8,16 +8,16 @@ datasource(file, skip = 0, comment = "")
 }
 \arguments{
 \item{file}{Either a path to a file, a connection, or literal data
-   (either a single string or a raw vector).
+(either a single string or a raw vector).
 
-   Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
-   be automatically uncompressed. Files starting with \code{http://},
-   \code{https://}, \code{ftp://}, or \code{ftps://} will be automatically
-   downloaded. Remote gz files can also be automatically downloaded &
-   decompressed.
+Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
+be automatically uncompressed. Files starting with \code{http://},
+\code{https://}, \code{ftp://}, or \code{ftps://} will be automatically
+downloaded. Remote gz files can also be automatically downloaded and
+decompressed.
 
-   Literal data is most useful for examples and tests. It must contain at
-   least one new line to be recognised as data (instead of a path).}
+Literal data is most useful for examples and tests. It must contain at
+least one new line to be recognised as data (instead of a path).}
 
 \item{skip}{Number of lines to skip before reading data.}
 }
@@ -33,10 +33,13 @@ datasource(charToRaw("a,b,c\\n1,2,3"))
 datasource(readr_example("mtcars.csv"))
 datasource(readr_example("mtcars.csv.bz2"))
 datasource(readr_example("mtcars.csv.zip"))
-datasource("https://github.com/hadley/readr/raw/master/inst/extdata/mtcars.csv")
+\dontrun{
+datasource("https://github.com/tidyverse/readr/raw/master/inst/extdata/mtcars.csv")
+}
 
 # Connection
-datasource(rawConnection(charToRaw("abc\\n123")))
+con <- rawConnection(charToRaw("abc\\n123"))
+datasource(con)
+close(con)
 }
 \keyword{internal}
-

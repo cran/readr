@@ -1,7 +1,7 @@
 context("read_fwf")
 
 test_that("trailing spaces ommitted", {
-  spec <- fwf_empty(test_path("fwf-trailing.txt"))
+  spec <- fwf_empty("fwf-trailing.txt")
   expect_equal(spec$begin, c(0, 4))
   expect_equal(spec$end, c(3, NA))
 
@@ -21,7 +21,7 @@ test_that("skipping column doesn't pad col_names", {
 })
 
 test_that("fwf_empty can skip comments", {
-  x <- "1 2 3\nCOMMENT\n4 5 6"
+  x <- "COMMENT\n1 2 3\n4 5 6"
 
   out1 <- read_fwf(x, fwf_empty(x, comment = "COMMENT"), comment = "COMMENT")
   expect_equal(dim(out1), c(2, 3))
@@ -78,7 +78,7 @@ test_that("read columns with width, ragged", {
 })
 
 test_that("read_fwf returns an empty data.frame on an empty file", {
-   expect_equal(read_fwf("empty-file", progress = FALSE), tibble::data_frame())
+   expect_true(all.equal(read_fwf("empty-file", progress = FALSE), tibble::data_frame()))
 })
 
 test_that("check for line breaks in between widths", {
@@ -101,8 +101,8 @@ test_that("check for line breaks in between widths", {
   expect_equal(n_problems(out2), 2)
 
   exp <- tibble::tibble(X1 = c(1L, 2L, 1L), X2 = c(1L, NA, 1L))
-  expect_equal(out1, exp)
-  expect_equal(out2, exp)
+  expect_true(all.equal(out1, exp))
+  expect_true(all.equal(out2, exp))
 
 })
 
@@ -121,9 +121,64 @@ test_that("ignore commented lines anywhere in file", {
   expect_equal(n_problems(x1), 0)
 })
 
+test_that("error on empty spec (#511, #519)", {
+  txt = "foo\n"
+  pos = fwf_positions(start = numeric(0), end = numeric(0))
+  expect_error(read_fwf(txt, pos), "Zero-length.*specifications not supported")
+})
+
+test_that("error on overlapping spec (#534)", {
+  expect_error(
+    read_fwf("2015a\n2016b", fwf_positions(c(1, 3, 5), c(4, 4, 5))),
+    "Overlap.*"
+    )
+})
+
+# fwf_cols
+test_that("fwf_cols produces correct fwf_positions object with elements of length 2", {
+  expected <- fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("a", "b", "d"))
+  expect_equivalent(fwf_cols(a = c(1, 2), b = c(9, 12), d = c(4, 6)), expected)
+})
+
+test_that("fwf_cols produces correct fwf_positions object with elements of length 1", {
+  expected <- fwf_widths(c(2L, 4L, 3L), c("a", "b", "c"))
+  expect_equivalent(fwf_cols(a = 2, b = 4, c = 3), expected)
+})
+
+
+test_that("fwf_cols throws error when arguments are not length 1 or 2", {
+  pattern <- "Variables must be length 1 or .*"
+  expect_error(fwf_cols(a = 1:3, b = 4:5), pattern)
+  expect_error(fwf_cols(a = c(), b = 4:5), pattern)
+})
+
+test_that("fwf_cols works with unnamed columns", {
+  expect_equivalent(
+    fwf_cols(c(1, 2), c(9, 12), c(4, 6)),
+    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("X1", "X2", "X3"))
+  )
+  expect_equivalent(
+    fwf_cols(a = c(1, 2), c(9, 12), c(4, 6)),
+    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("a", "X2", "X3"))
+  )
+})
+
 # read_table -------------------------------------------------------------------
 
 test_that("read_table silently reads ragged last column", {
   x <- read_table("foo bar\n1   2\n3   4\n5   6\n", progress = FALSE)
   expect_equal(x$foo, c(1, 3, 5))
+})
+
+test_that("read_table skips all comment lines", {
+  x <- read_table("foo bar\n1   2\n3   4\n5   6\n", progress = FALSE)
+
+  y <- read_table("#comment1\n#comment2\nfoo bar\n1   2\n3   4\n5   6\n", progress = FALSE, comment = "#")
+
+  expect_equal(x, y)
+})
+
+test_that("read_table can read from a pipe (552)", {
+  x <- read_table(pipe("echo a b c && echo 1 2 3 && echo 4 5 6"), progress = FALSE)
+  expect_equal(x$a, c(1, 4))
 })

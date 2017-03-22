@@ -2,27 +2,32 @@
 % Please edit documentation in R/tokenizer.R
 \name{Tokenizers}
 \alias{Tokenizers}
-\alias{tokenizer_csv}
 \alias{tokenizer_delim}
-\alias{tokenizer_fwf}
+\alias{tokenizer_csv}
+\alias{tokenizer_tsv}
 \alias{tokenizer_line}
 \alias{tokenizer_log}
-\alias{tokenizer_tsv}
+\alias{tokenizer_fwf}
+\alias{tokenizer_ws}
 \title{Tokenizers.}
 \usage{
 tokenizer_delim(delim, quote = "\\"", na = "NA", quoted_na = TRUE,
   comment = "", trim_ws = TRUE, escape_double = TRUE,
   escape_backslash = FALSE)
 
-tokenizer_csv(na = "NA", quoted_na = TRUE, comment = "", trim_ws = TRUE)
+tokenizer_csv(na = "NA", quoted_na = TRUE, quote = "\\"", comment = "",
+  trim_ws = TRUE)
 
-tokenizer_tsv(na = "NA", quoted_na = TRUE, comment = "", trim_ws = TRUE)
+tokenizer_tsv(na = "NA", quoted_na = TRUE, quote = "\\"", comment = "",
+  trim_ws = TRUE)
 
 tokenizer_line(na = character())
 
 tokenizer_log()
 
 tokenizer_fwf(begin, end, na = "NA", comment = "")
+
+tokenizer_ws(na = "NA", comment = "")
 }
 \arguments{
 \item{delim}{Single character used to separate fields within a record.}
@@ -47,7 +52,7 @@ a single quote, \code{\"}.}
 
 \item{escape_backslash}{Does the file use backslashes to escape special
 characters? This is more general than \code{escape_double} as backslashes
-can be used to escape the delimeter character, the quote characer, or
+can be used to escape the delimiter character, the quote character, or
 to add special characters like \code{\\n}.}
 
 \item{begin, end}{Begin and end offsets for each file. These are C++
@@ -57,10 +62,9 @@ offsets so the first column is column zero, and the ranges are
 \description{
 Explicitly create tokenizer objects. Usually you will not call these
 function, but will instead use one of the use friendly wrappers like
-\code{read_csv}.
+\code{\link[=read_csv]{read_csv()}}.
 }
 \examples{
 tokenizer_csv()
 }
 \keyword{internal}
-

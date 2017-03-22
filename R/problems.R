@@ -1,15 +1,15 @@
-#' Retrieve parsing problems.
+#' Retrieve parsing problems
 #'
 #' Readr functions will only throw an error if parsing fails in an unrecoverable
 #' way. However, there are lots of potential problems that you might want to
-#' know about - these are stored in the \code{problems} attribute of the
+#' know about - these are stored in the `problems` attribute of the
 #' output, which you can easily access with this function.
-#' \code{stop_for_problems()} will throw an error if there are any parsing
+#' `stop_for_problems()` will throw an error if there are any parsing
 #' problems: this is useful for automated scripts where you want to throw
 #' an error as soon as you encounter a problem.
 #'
-#' @param x An data frame (from \code{read_*}) or a vector
-#'   (from \code{parse_*}).
+#' @param x An data frame (from `read_*()`) or a vector
+#'   (from `parse_*()`).
 #' @return A data frame with one row for each problem and four columns:
 #'   \item{row,col}{Row and column of problem}
 #'   \item{expected}{What readr expected to find}
@@ -66,7 +66,7 @@ problem_rows <- function(x) {
   x[unique(probs$row), , drop = FALSE]
 }
 
-warn_problems <- function(x, name = "input") {
+warn_problems <- function(x) {
   n <- n_problems(x)
   if (n == 0)
     return(x)
@@ -96,12 +96,14 @@ warn_problems <- function(x, name = "input") {
   x
 }
 
-name_problems <- function(x) {
+name_problems <- function(x, all_colnames, name = "input") {
+
   if (n_problems(x) == 0)
     return(x)
 
   problems <- problems(x)
-  problems$col <- names(x)[problems$col]
+  problems$file <- name
+  problems$col <- all_colnames[problems$col]
   attr(x, "problems") <- problems
 
   x

@@ -1,10 +1,10 @@
 #' Create column specification
 #'
-#' @param ... Either column objects created by \code{col_*}, or their
+#' @param ... Either column objects created by `col_*()`, or their
 #'   abbreviated character names. If you're only overriding a few columns,
 #'   it's best to refer to columns by name. If not named, the column types
 #'   must match the column names exactly.
-#' @param .default Any named columns not explicitly overridden in \code{...}
+#' @param .default Any named columns not explicitly overridden in `...`
 #'   will be read with this column type.
 #' @export
 #' @examples
@@ -88,6 +88,10 @@ print.col_spec <- function(x, n = Inf, condense = NULL, ...) {
   invisible(x)
 }
 
+#' @description
+#' `cols_condense()` takes a spec object and condenses its definition by setting
+#' the default column type to the most frequent type and only listing columns
+#' with a different type.
 #' @rdname spec
 #' @export
 cols_condense <- function(x) {
@@ -131,7 +135,7 @@ format.col_spec <- function(x, n = Inf, condense = NULL, ...) {
     vapply(seq_along(cols),
       function(i) {
         col_funs <- sub("^collector_", "col_", class(cols[[i]])[[1]])
-        args <- vapply(cols[[i]], deparse, character(1))
+        args <- vapply(cols[[i]], deparse2, character(1), sep = "\n    ")
         args <- paste(names(args), args, sep = " = ", collapse = ", ")
 
         col_names <- names(cols)[[i]]
@@ -178,10 +182,8 @@ show_cols_spec <- function(spec, n = getOption("readr.num_columns", 20)) {
 
 #' Examine the column specifications for a data frame
 #'
-#' \code{\link{spec}} extracts the full column specifications.
-#' \code{\link{cols_condense}} takes a spec object and condenses its definition
-#' by setting the default column type to the most frequent type and only
-#' listing columns with a different type.
+#' `spec()` extracts the full column specification from a tibble
+#' created by readr.
 #'
 #' @param x The data frame object to extract from
 #' @return A col_spec object.
@@ -205,7 +207,6 @@ col_concise <- function(x) {
     c = col_character(),
     D = col_date(),
     d = col_double(),
-    e = col_euro_double(),
     i = col_integer(),
     l = col_logical(),
     n = col_number(),
@@ -217,7 +218,7 @@ col_concise <- function(x) {
 
 col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
                                  guessed_types = NULL,
-                                 comment = "", skip = 0, n = 1000,
+                                 comment = "", skip = 0, guess_max = 1000,
                                  tokenizer = tokenizer_csv(),
                                  locale = default_locale(),
                                  drop_skipped_names = FALSE) {
@@ -352,7 +353,7 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
   if (any(is_guess)) {
     if (is.null(guessed_types)) {
       ds <- datasource(file, skip = skip, comment = comment)
-      guessed_types <- guess_types(ds, tokenizer, locale, n = n)
+      guessed_types <- guess_types(ds, tokenizer, locale, guess_max = guess_max)
     }
 
     # Need to be careful here: there might be more guesses than types/names
@@ -363,8 +364,28 @@ col_spec_standardise <- function(file, col_names = TRUE, col_types = NULL,
   spec
 }
 
-guess_types <- function(datasource, tokenizer, locale, n = 1000) {
-  guess_types_(datasource, tokenizer, locale, n = n)
+
+check_guess_max <- function(guess_max, max_limit = .Machine$integer.max %/% 100) {
+
+  if (length(guess_max) != 1 || !is.numeric(guess_max) || !is_integerish(guess_max) ||
+      is.na(guess_max) || guess_max < 0) {
+    stop("`guess_max` must be a positive integer", call. = FALSE)
+  }
+
+  if (guess_max > max_limit) {
+    warning("`guess_max` is a very large value, setting to `", max_limit,
+      "` to avoid exhausting memory", call. = FALSE)
+    guess_max <- max_limit
+  }
+  guess_max
+}
+
+guess_types <- function(datasource, tokenizer, locale, guess_max = 1000,
+  max_limit = .Machine$integer.max %/% 100) {
+
+  guess_max <- check_guess_max(guess_max, max_limit)
+
+  guess_types_(datasource, tokenizer, locale, n = guess_max)
 }
 
 guess_header <- function(datasource, tokenizer, locale = default_locale()) {

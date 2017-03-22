@@ -16,4 +16,4 @@ directory. This function make them easy to access
 \examples{
 readr_example("challenge.csv")
 }
-
+\keyword{internal}

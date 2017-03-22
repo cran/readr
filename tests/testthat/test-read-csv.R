@@ -28,6 +28,12 @@ test_that("passing \"\" to read_csv's 'NA' option reads \"\" correctly", {
   expect_equal(read_csv("a,b\nfoo,bar\nfoo,\n", na = "", progress = FALSE)$b, c("bar", NA))
 })
 
+test_that("changing read_csv's 'quote' argument works correctly", {
+  test_data <- read_csv("basic-df.csv", col_types = NULL, col_names = TRUE, progress = FALSE)
+  test_data_singlequote <- read_csv("basic-df-singlequote.csv", quote="'")
+  expect_identical(test_data, test_data_singlequote)
+})
+
 test_that("read_csv's 'skip' option allows for skipping'", {
   test_data <- read_csv("basic-df.csv", skip = 1, progress = FALSE)
   expect_equal(nrow(test_data), 9)
@@ -138,7 +144,9 @@ test_that("too few or extra col_types generates warnings", {
 # read_csv2 ---------------------------------------------------------------
 
 test_that("decimal mark automatically set to ,", {
-  x <- read_csv2("x\n1,23", progress = FALSE)
+  expect_message(
+    x <- read_csv2("x\n1,23", progress = FALSE),
+    if (default_locale()$decimal_mark == ".") "decimal .*grouping .*mark" else NA)
   expect_equal(x[[1]], 1.23)
 })
 
@@ -189,9 +197,9 @@ test_that("comments are ignored regardless of where they appear", {
     x2 = c("B2", NA_character_, "A5"),
     x3 = c("C2", NA_character_, "A6"))
 
-  expect_equal(chk, out5)
-  expect_equal(chk, out6)
-  expect_equal(chk, out7)
+  expect_true(all.equal(chk, out5))
+  expect_true(all.equal(chk, out6))
+  expect_true(all.equal(chk, out7))
 })
 
 test_that("escaped/quoted comments are ignored", {
@@ -222,5 +230,10 @@ test_that("skip respects comments", {
 })
 
 test_that("read_csv returns an empty data.frame on an empty file", {
-   expect_equal(read_csv("empty-file", progress = FALSE), tibble::data_frame())
+   expect_true(all.equal(read_csv("empty-file", progress = FALSE), tibble::data_frame()))
+})
+
+test_that("read_delim errors on length 0 delimiter (557)", {
+  expect_error(read_delim("a b\n1 2\n", delim = ""),
+    "`delim` must be at least one character, use `read_table\\(\\)` for whitespace delimited input\\.")
 })

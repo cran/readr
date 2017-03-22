@@ -35,9 +35,10 @@ CollectorPtr Collector::create(List spec, LocaleInfo* pLocale) {
     return CollectorPtr(new CollectorTime(pLocale, format));
   }
   if (subclass == "collector_factor") {
-    CharacterVector levels = as<CharacterVector>(spec["levels"]);
+    Nullable<CharacterVector> levels = as< Nullable<CharacterVector> >(spec["levels"]);
     bool ordered = as<bool>(spec["ordered"]);
-    return CollectorPtr(new CollectorFactor(levels, ordered));
+    bool includeNa = as<bool>(spec["include_na"]);
+    return CollectorPtr(new CollectorFactor(&pLocale->encoder_, levels, ordered, includeNa));
   }
 
   Rcpp::stop("Unsupported column type");
@@ -187,6 +188,23 @@ void CollectorDouble::setValue(int i, const Token& t) {
   }
 }
 
+void CollectorFactor::insert(int i, Rcpp::String str, const Token& t) {
+  std::map<Rcpp::String, int>::iterator it = levelset_.find(str);
+  if (it == levelset_.end()) {
+    if (implicitLevels_ || (includeNa_ && str == NA_STRING)) {
+      int n = levelset_.size();
+      levelset_.insert(std::make_pair(str, n));
+      levels_.push_back(str);
+      INTEGER(column_)[i] = n + 1;
+    } else {
+      warn(t.row(), t.col(), "value in level set", str);
+      INTEGER(column_)[i] = NA_INTEGER;
+    }
+  } else {
+    INTEGER(column_)[i] = it->second + 1;
+  }
+}
+
 void CollectorFactor::setValue(int i, const Token& t) {
 
   switch(t.type()) {
@@ -194,20 +212,17 @@ void CollectorFactor::setValue(int i, const Token& t) {
     boost::container::string buffer;
     SourceIterators string = t.getString(&buffer);
 
-    std::string std_string(string.first, string.second);
-    std::map<std::string,int>::iterator it = levelset_.find(std_string);
-    if (it == levelset_.end()) {
-      warn(t.row(), t.col(), "value in level set", std_string);
-      INTEGER(column_)[i] = NA_INTEGER;
-      return;
-    } else {
-      INTEGER(column_)[i] = it->second + 1;
-      return;
-    }
+    Rcpp::String std_string = pEncoder_->makeSEXP(string.first, string.second, t.hasNull());
+    insert(i, std_string, t);
+    return;
   };
   case TOKEN_MISSING:
   case TOKEN_EMPTY:
-    INTEGER(column_)[i] = NA_INTEGER;
+    if (includeNa_) {
+      insert(i, NA_STRING, t);
+    } else {
+      INTEGER(column_)[i] = NA_INTEGER;
+    }
     return;
   case TOKEN_EOF:
     Rcpp::stop("Invalid token");
@@ -265,13 +280,13 @@ void CollectorLogical::setValue(int i, const Token& t) {
       }
       break;
     case 4:
-      if (strncmp(string.first, "TRUE", 4) == 0 || strncmp(string.first, "true", 4) == 0) {
+      if (strncasecmp(string.first, "true", 4) == 0) {
         LOGICAL(column_)[i] = 1;
         return;
       }
       break;
     case 5:
-      if (strncmp(string.first, "FALSE", 5) == 0 || strncmp(string.first, "false", 5) == 0) {
+      if (strncasecmp(string.first, "false", 5) == 0) {
         LOGICAL(column_)[i] = 0;
         return;
       }

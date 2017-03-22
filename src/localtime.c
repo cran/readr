@@ -1267,7 +1267,6 @@ localsub(const time_t *const timep, const int_fast32_t offset, stm *const tmp)
     */
     result = timesub(&t, ttisp->tt_gmtoff, sp, tmp);
     tmp->tm_isdst = ttisp->tt_isdst;
-    tzname[tmp->tm_isdst] = &sp->chars[ttisp->tt_abbrind];
 //#ifdef HAVE_TM_ZONE
     tmp->tm_zone = &sp->chars[ttisp->tt_abbrind];
 //#endif
@@ -1620,15 +1619,8 @@ time2sub(stm *const tmp,
   /*
   ** Do a binary search (this works whatever time_t's type is).
   */
-  if (!TYPE_SIGNED(time_t)) {
-    lo = 0;
-    hi = lo - 1;
-  } else {
-    lo = 1;
-    for (int i = 0; i < (int) TYPE_BIT(time_t) - 1; ++i)
-      lo *= 2;
-    hi = -(lo + 1);
-  }
+  lo = time_t_min;
+  hi = time_t_max;
   for ( ; ; ) {
     t = lo / 2 + hi / 2;
     if (t < lo)

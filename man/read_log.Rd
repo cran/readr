@@ -2,63 +2,65 @@
 % Please edit documentation in R/read_log.R
 \name{read_log}
 \alias{read_log}
-\title{Read common/combined log file.}
+\title{Read common/combined log file into a tibble}
 \usage{
 read_log(file, col_names = FALSE, col_types = NULL, skip = 0,
-  n_max = -1, progress = interactive())
+  n_max = Inf, progress = show_progress())
 }
 \arguments{
 \item{file}{Either a path to a file, a connection, or literal data
-   (either a single string or a raw vector).
+(either a single string or a raw vector).
 
-   Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
-   be automatically uncompressed. Files starting with \code{http://},
-   \code{https://}, \code{ftp://}, or \code{ftps://} will be automatically
-   downloaded. Remote gz files can also be automatically downloaded &
-   decompressed.
+Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
+be automatically uncompressed. Files starting with \code{http://},
+\code{https://}, \code{ftp://}, or \code{ftps://} will be automatically
+downloaded. Remote gz files can also be automatically downloaded and
+decompressed.
 
-   Literal data is most useful for examples and tests. It must contain at
-   least one new line to be recognised as data (instead of a path).}
+Literal data is most useful for examples and tests. It must contain at
+least one new line to be recognised as data (instead of a path).}
 
 \item{col_names}{Either \code{TRUE}, \code{FALSE} or a character vector
-  of column names.
+of column names.
 
-  If \code{TRUE}, the first row of the input will be used as the column
-  names, and will not be included in the data frame. If \code{FALSE}, column
-  names will be generated automatically: X1, X2, X3 etc.
+If \code{TRUE}, the first row of the input will be used as the column
+names, and will not be included in the data frame. If \code{FALSE}, column
+names will be generated automatically: X1, X2, X3 etc.
 
-  If \code{col_names} is a character vector, the values will be used as the
-  names of the columns, and the first row of the input will be read into
-  the first row of the output data frame.
+If \code{col_names} is a character vector, the values will be used as the
+names of the columns, and the first row of the input will be read into
+the first row of the output data frame.
 
-  Missing (\code{NA}) column names will generate a warning, and be filled
-  in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
-  will generate a warning and be made unique with a numeric prefix.}
+Missing (\code{NA}) column names will generate a warning, and be filled
+in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
+will generate a warning and be made unique with a numeric prefix.}
 
-\item{col_types}{One of \code{NULL}, a \code{\link{cols}} specification, or
-  a string. See \code{vignette("column-types")} for more details.
+\item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
+a string. See \code{vignette("column-types")} for more details.
 
-  If \code{NULL}, all column types will be imputed from the first 1000 rows
-  on the input. This is convenient (and fast), but not robust. If the
-  imputation fails, you'll need to supply the correct types yourself.
+If \code{NULL}, all column types will be imputed from the first 1000 rows
+on the input. This is convenient (and fast), but not robust. If the
+imputation fails, you'll need to supply the correct types yourself.
 
-  If a column specification created by \code{\link{cols}}, it must contain
-  one column specification for each column. If you only want to read a
-  subset of the columns, use \code{\link{cols_only}}.
+If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+one column specification for each column. If you only want to read a
+subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
-  Alternatively, you can use a compact string representation where each
-  character represents one column:
-  c = character, i = integer, n = number, d = double,
-  l = logical, D = date, T = date time, t = time, ? = guess, or
-  \code{_}/\code{-} to skip the column.}
+Alternatively, you can use a compact string representation where each
+character represents one column:
+c = character, i = integer, n = number, d = double,
+l = logical, D = date, T = date time, t = time, ? = guess, or
+\code{_}/\code{-} to skip the column.}
 
 \item{skip}{Number of lines to skip before reading data.}
 
 \item{n_max}{Maximum number of records to read.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session. The display is updated every 50,000 values
-and will only display if estimated reading time is 5 seconds or more.}
+in an interactive session and not while knitting a document. The display
+is updated every 50,000 values and will only display if estimated reading
+time is 5 seconds or more. The automatic progress bar can be disabled by
+setting option \code{readr.show_progress} to \code{FALSE}.}
 }
 \description{
 This is a fairly standard format for log files - it uses both quotes
@@ -68,4 +70,3 @@ in a quoted string. The dash, "-", is used for missing values.
 \examples{
 read_log(readr_example("example.log"))
 }
-
