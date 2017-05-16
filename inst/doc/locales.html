@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -166,7 +166,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>Note that these are only used as defaults. If individual times have timezones and you’re using “%Z” (as name, e.g. “America/Chicago”) or “%z” (as offset from UTC, e.g. “+0800”), they’ll override the defaults. There’s currently no good way to parse times that use US abbreviations.</p>
 <p>Note that once you have the date in R, changing the time zone just changes its printed representation - it still represents the same instants of time. If you’ve loaded non-UTC data, and want to display it as UTC, try this snippet of code:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">is_datetime &lt;-<span class="st"> </span><span class="kw">sapply</span>(df, inherits, <span class="st">&quot;POSIXct&quot;</span>)
-df[is_datetime] &lt;-<span class="st"> </span><span class="kw">lapply</span>(df[is_datetime], function(x) {
+df[is_datetime] &lt;-<span class="st"> </span><span class="kw">lapply</span>(df[is_datetime], <span class="cf">function</span>(x) {
   <span class="kw">attr</span>(x, <span class="st">&quot;tzone&quot;</span>) &lt;-<span class="st"> &quot;UTC&quot;</span>
   x
 })</code></pre></div>
@@ -272,7 +272,7 @@ y
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

@@ -1,5 +1,5 @@
 Package: readr
-Version: 1.1.0
+Version: 1.1.1
 Title: Read Rectangular Text Data
 Description: The goal of 'readr' is to provide a fast and friendly way to read
     rectangular data (like 'csv', 'tsv', and 'fwf'). It is designed to flexibly
@@ -24,7 +24,7 @@ URL: http://readr.tidyverse.org, https://github.com/tidyverse/readr
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2017-03-20 15:05:42 UTC; jhester
+Packaged: 2017-05-16 16:03:56 UTC; jhester
 Author: Hadley Wickham [aut],
   Jim Hester [aut, cre],
   Romain Francois [aut],
@@ -34,4 +34,4 @@ Author: Hadley Wickham [aut],
   Mikkel Jørgensen [ctb, cph] (grisu3 implementation)
 Maintainer: Jim Hester <james.hester@rstudio.com>
 Repository: CRAN
-Date/Publication: 2017-03-22 19:24:23 UTC
+Date/Publication: 2017-05-16 19:03:57 UTC

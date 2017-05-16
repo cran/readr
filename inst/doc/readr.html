@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -240,13 +240,13 @@ mtcars_spec
 <span class="co">#&gt;   y = col_character()</span>
 <span class="co">#&gt; )</span>
 <span class="co">#&gt; Warning: 1000 parsing failures.</span>
-<span class="co">#&gt;  row col               expected             actual                                                                                                                file</span>
-<span class="co">#&gt; 1001   x no trailing characters .23837975086644292 '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpVbzOxN/Rinstb46469f4dc9b/readr/extdata/challenge.csv'</span>
-<span class="co">#&gt; 1002   x no trailing characters .41167997173033655 '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpVbzOxN/Rinstb46469f4dc9b/readr/extdata/challenge.csv'</span>
-<span class="co">#&gt; 1003   x no trailing characters .7460716762579978  '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpVbzOxN/Rinstb46469f4dc9b/readr/extdata/challenge.csv'</span>
-<span class="co">#&gt; 1004   x no trailing characters .723450553836301   '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpVbzOxN/Rinstb46469f4dc9b/readr/extdata/challenge.csv'</span>
-<span class="co">#&gt; 1005   x no trailing characters .614524137461558   '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpVbzOxN/Rinstb46469f4dc9b/readr/extdata/challenge.csv'</span>
-<span class="co">#&gt; .... ... ...................... .................. ...................................................................................................................</span>
+<span class="co">#&gt;  row col               expected             actual                                                                                                                 file</span>
+<span class="co">#&gt; 1001   x no trailing characters .23837975086644292 '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpufyP0S/Rinst133b1133d212a/readr/extdata/challenge.csv'</span>
+<span class="co">#&gt; 1002   x no trailing characters .41167997173033655 '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpufyP0S/Rinst133b1133d212a/readr/extdata/challenge.csv'</span>
+<span class="co">#&gt; 1003   x no trailing characters .7460716762579978  '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpufyP0S/Rinst133b1133d212a/readr/extdata/challenge.csv'</span>
+<span class="co">#&gt; 1004   x no trailing characters .723450553836301   '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpufyP0S/Rinst133b1133d212a/readr/extdata/challenge.csv'</span>
+<span class="co">#&gt; 1005   x no trailing characters .614524137461558   '/private/var/folders/dt/r5s12t392tb5sk181j3gs4zw0000gn/T/RtmpufyP0S/Rinst133b1133d212a/readr/extdata/challenge.csv'</span>
+<span class="co">#&gt; .... ... ...................... .................. ....................................................................................................................</span>
 <span class="co">#&gt; See problems(...) for more details.</span></code></pre></div>
 <p>The rectangular parsing functions almost always succeed; they’ll only fail if the format is severely messed up. Instead, readr will generate a data frame of problems. The first few will be printed out, and you can access them all with <code>problems()</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">problems</span>(df1)
@@ -316,7 +316,7 @@ mtcars_spec
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

@@ -1,7 +1,7 @@
-139badfc89955deddbc5affdfc12bc97 *DESCRIPTION
+ad0327685ef91a8824a4cebe7533ca74 *DESCRIPTION
 b234ee4d69f5fce4486a80fdaf4a4263 *LICENSE
 08f59e5ac10cf0a1c6b2cc7b06cf9dbe *NAMESPACE
-bb0e197e6238005a49fcc8aa762963ba *NEWS.md
+043504c811b7618ffaf5d233709dea88 *NEWS.md
 4d8cd06e6accb7e97c45d9f1ec38b95d *R/POSIXct.R
 5e41f8f462f6444aaeed792a4ede2b0f *R/RcppExports.R
 f2ae3ddf5dc1d26691fd70fb562db4a3 *R/callback.R
@@ -34,10 +34,10 @@ ea8b3265d7b8e48dcf2be2d88d4b03b9 *README.md
 d1c3e45b5d85160716ee0e2496dc37bc *build/vignette.rds
 8e492ecc4dd7b6a3efc9693795da606b *inst/doc/locales.R
 9d5a871ab532c238a9ed9cb7b6e8b656 *inst/doc/locales.Rmd
-5b0899d9860c548efafe8170133eb59d *inst/doc/locales.html
+6f36ac0ba6b6cc8f6deac9220642a415 *inst/doc/locales.html
 44ef2e88bc8af75c262c857c0cc0886e *inst/doc/readr.R
 c59f342de72e2d1fdfb6c62628801815 *inst/doc/readr.Rmd
-2b2ad29e21f216e6d04cda2eb50d27c1 *inst/doc/readr.html
+3677bf54b11bd324df0a0cb5b646393d *inst/doc/readr.html
 b05a668d9a4de93b5dd397cfde7905b1 *inst/extdata/challenge.csv
 fa584bf0652806be23f04c9938ec0ec8 *inst/extdata/epa78.txt
 9dc92f35a3293d75ce989e1e694a57c7 *inst/extdata/example.log
@@ -118,7 +118,7 @@ ddaa76b8a82daabcb374f62c03a5b74a *src/datetime.cpp
 d6239d17c5eb7d3393e34e882a3d960a *src/grisu3.c
 d763bbf07076d54cf56b950534f343ab *src/grisu3.h
 08d6f7641ff5b9d6a964096e07cb3ea5 *src/init.c
-2576d24d08046e6f56ee8b6f4d0e0975 *src/localtime.c
+6d35fc9bb10a5fac8baecdaf862fb7e4 *src/localtime.c
 fa6a0141e4e6563c551ba4c5b1f2497d *src/localtime.h
 e51f15029e7b831364b2dec23deafcfa *src/parse.cpp
 3995bee83a3fecc69d1914b5928ffd4a *src/read.cpp
@@ -166,7 +166,7 @@ e413a7173eba27678274de75d0426735 *tests/testthat/test-parsing.R
 c8da43bf60ea4b791e4e0523d0d94876 *tests/testthat/test-read-chunked.R
 dab1fc000c82b8cd45175988089c3a6a *tests/testthat/test-read-csv.R
 72fedc218eadd7cd6bce486b47dc8f2d *tests/testthat/test-read-file.R
-295ff1058effe34db23ee046bec852f0 *tests/testthat/test-read-fwf.R
+2debfb814c995ff659d76928b76f8b02 *tests/testthat/test-read-fwf.R
 d0d0d867482a456b7b8fda67faff1a75 *tests/testthat/test-read-lines.R
 eafc6a6b3bb3ffd8e87307ff647e1bd1 *tests/testthat/test-read-table.R
 8def70b30d29c2c609f1342d74354df0 *tests/testthat/test-tokenizer-delim.R
