@@ -6,16 +6,17 @@
 \alias{guess_parser}
 \title{Parse using the "best" type}
 \usage{
-parse_guess(x, na = c("", "NA"), locale = default_locale())
+parse_guess(x, na = c("", "NA"), locale = default_locale(),
+  trim_ws = TRUE, guess_integer = FALSE)
 
 col_guess()
 
-guess_parser(x, locale = default_locale())
+guess_parser(x, locale = default_locale(), guess_integer = FALSE)
 }
 \arguments{
 \item{x}{Character vector of values to parse.}
 
-\item{na}{Character vector of strings to use for missing values. Set this
+\item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
@@ -23,6 +24,12 @@ The default locale is US-centric (like R), but you can use
 \code{\link[=locale]{locale()}} to create your own locale that controls things like
 the default time zone, encoding, decimal mark, big mark, and day/month
 names.}
+
+\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+each field before parsing it?}
+
+\item{guess_integer}{If \code{TRUE}, guess integer types for whole numbers, if
+\code{FALSE} guess numeric type for all numbers.}
 }
 \description{
 \code{parse_guess()} returns the parser vector; \code{guess_parser()}
@@ -49,6 +56,9 @@ parse_guess(c("2010-10-10"))
 }
 \seealso{
 Other parsers: \code{\link{col_skip}},
+  \code{\link{cols_condense}}, \code{\link{cols}},
   \code{\link{parse_datetime}}, \code{\link{parse_factor}},
-  \code{\link{parse_logical}}, \code{\link{parse_number}}
+  \code{\link{parse_logical}}, \code{\link{parse_number}},
+  \code{\link{parse_vector}}
 }
+\concept{parsers}

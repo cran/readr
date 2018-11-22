@@ -1,4 +1,4 @@
-#' @useDynLib readr
+#' @useDynLib readr, .registration = TRUE
 #' @importClassesFrom Rcpp "C++Object"
 NULL
 
@@ -7,9 +7,8 @@ NULL
 #' `read_csv()` and `read_tsv()` are special cases of the general
 #' `read_delim()`. They're useful for reading the most common types of
 #' flat file data, comma separated values and tab separated values,
-#' respectively. `read_csv2()` uses `;` for separators, instead of
-#' `,`. This is common in European countries which use `,` as the
-#' decimal separator.
+#' respectively. `read_csv2()` uses `;` for the field separator and `,` for the
+#' decimal point. This is common in some European countries.
 #' @inheritParams datasource
 #' @inheritParams tokenizer_delim
 #' @param col_names Either `TRUE`, `FALSE` or a character vector
@@ -27,7 +26,7 @@ NULL
 #'   in with dummy names `X1`, `X2` etc. Duplicate column names
 #'   will generate a warning and be made unique with a numeric prefix.
 #' @param col_types One of `NULL`, a [cols()] specification, or
-#'   a string. See `vignette("column-types")` for more details.
+#'   a string. See `vignette("readr")` for more details.
 #'
 #'   If `NULL`, all column types will be imputed from the first 1000 rows
 #'   on the input. This is convenient (and fast), but not robust. If the
@@ -54,7 +53,7 @@ NULL
 #'   is updated every 50,000 values and will only display if estimated reading
 #'   time is 5 seconds or more. The automatic progress bar can be disabled by
 #'   setting option \code{readr.show_progress} to \code{FALSE}.
-#' @return A data frame. If there are parsing problems, a warning tells you
+#' @return A [tibble()]. If there are parsing problems, a warning tells you
 #'   how many, and you can retrieve the details with \code{\link{problems}()}.
 #' @export
 #' @examples
@@ -63,13 +62,17 @@ NULL
 #' read_csv(readr_example("mtcars.csv"))
 #' read_csv(readr_example("mtcars.csv.zip"))
 #' read_csv(readr_example("mtcars.csv.bz2"))
+#'
+#' \dontrun{
+#' # Including remote paths
 #' read_csv("https://github.com/tidyverse/readr/raw/master/inst/extdata/mtcars.csv")
+#' }
 #'
 #' # Or directly from a string (must contain a newline)
 #' read_csv("x,y\n1,2\n3,4")
 #'
 #' # Column types --------------------------------------------------------------
-#' # By default, readr guesses the columns types, looking at the first 100 rows.
+#' # By default, readr guesses the columns types, looking at the first 1000 rows.
 #' # You can override with a compact specification:
 #' read_csv("x,y\n1,2\n3,4", col_types = "dc")
 #'
@@ -94,7 +97,8 @@ read_delim <- function(file, delim, quote = '"',
                        na = c("", "NA"), quoted_na = TRUE,
                        comment = "", trim_ws = FALSE,
                        skip = 0, n_max = Inf, guess_max = min(1000, n_max),
-                       progress = show_progress()) {
+                       progress = show_progress(),
+                       skip_empty_rows = TRUE) {
 
   if (!nzchar(delim)) {
     stop("`delim` must be at least one character, ",
@@ -102,7 +106,8 @@ read_delim <- function(file, delim, quote = '"',
   }
   tokenizer <- tokenizer_delim(delim, quote = quote,
     escape_backslash = escape_backslash, escape_double = escape_double,
-    na = na, quoted_na = quoted_na, comment = comment, trim_ws = trim_ws)
+    na = na, quoted_na = quoted_na, comment = comment, trim_ws = trim_ws,
+    skip_empty_rows = skip_empty_rows)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max, guess_max =
       guess_max, progress = progress)
@@ -114,9 +119,9 @@ read_csv <- function(file, col_names = TRUE, col_types = NULL,
                      locale = default_locale(), na = c("", "NA"),
                      quoted_na = TRUE, quote = "\"", comment = "", trim_ws = TRUE,
                      skip = 0, n_max = Inf, guess_max = min(1000, n_max),
-                     progress = show_progress()) {
-  tokenizer <- tokenizer_csv(na = na, quoted_na = TRUE, quote = quote,
-    comment = comment, trim_ws = trim_ws)
+                     progress = show_progress(), skip_empty_rows = TRUE) {
+  tokenizer <- tokenizer_csv(na = na, quoted_na = quoted_na, quote = quote,
+    comment = comment, trim_ws = trim_ws, skip_empty_rows = skip_empty_rows)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max, guess_max =
       guess_max, progress = progress)
@@ -128,7 +133,8 @@ read_csv2 <- function(file, col_names = TRUE, col_types = NULL,
                       locale = default_locale(),
                       na = c("", "NA"), quoted_na = TRUE, quote = "\"",
                       comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
-                      guess_max = min(1000, n_max), progress = show_progress()) {
+                      guess_max = min(1000, n_max), progress = show_progress(),
+                      skip_empty_rows = TRUE) {
 
   if (locale$decimal_mark == ".") {
     message("Using ',' as decimal and '.' as grouping mark. Use read_delim() for more control.")
@@ -136,7 +142,8 @@ read_csv2 <- function(file, col_names = TRUE, col_types = NULL,
     locale$grouping_mark <- "."
   }
   tokenizer <- tokenizer_delim(delim = ";", na = na, quoted_na = quoted_na,
-    quote = quote, comment = comment, trim_ws = trim_ws)
+    quote = quote, comment = comment, trim_ws = trim_ws,
+    skip_empty_rows = skip_empty_rows)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max,
     guess_max = guess_max, progress = progress)
@@ -149,9 +156,10 @@ read_tsv <- function(file, col_names = TRUE, col_types = NULL,
                      locale = default_locale(),
                      na = c("", "NA"), quoted_na = TRUE, quote = "\"",
                      comment = "", trim_ws = TRUE, skip = 0, n_max = Inf,
-                     guess_max = min(1000, n_max), progress = show_progress()) {
+                     guess_max = min(1000, n_max), progress = show_progress(),
+                     skip_empty_rows = TRUE) {
   tokenizer <- tokenizer_tsv(na = na, quoted_na = quoted_na, quote = quote,
-    comment = comment, trim_ws = trim_ws)
+    comment = comment, trim_ws = trim_ws, skip_empty_rows = skip_empty_rows)
   read_delimited(file, tokenizer, col_names = col_names, col_types = col_types,
     locale = locale, skip = skip, comment = comment, n_max = n_max,
     guess_max = guess_max, progress = progress)
@@ -172,12 +180,18 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
   # If connection needed, read once.
   file <- standardise_path(file)
   if (is.connection(file)) {
-    data <- read_connection(file)
+    data <- datasource_connection(file, skip, comment)
   } else {
     if (empty_file(file)) {
        return(tibble::data_frame())
     }
-    data <- file
+    if (is.character(file) && identical(locale$encoding, "UTF-8")) {
+      # When locale is not set, file is probablly marked as its correct encoding.
+      # As default_locale() assumes file is UTF-8, file should be encoded as UTF-8 for non-UTF-8 MBCS locales.
+      data <- enc2utf8(file)
+    } else {
+      data <- file
+    }
   }
 
   spec <- col_spec_standardise(

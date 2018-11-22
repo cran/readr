@@ -18,7 +18,10 @@ downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. It must contain at
-least one new line to be recognised as data (instead of a path).}
+least one new line to be recognised as data (instead of a path) or be a
+vector of greater than length 1.
+
+Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
 \item{col_names}{Either \code{TRUE}, \code{FALSE} or a character vector
 of column names.
@@ -36,7 +39,7 @@ in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
 will generate a warning and be made unique with a numeric prefix.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
-a string. See \code{vignette("column-types")} for more details.
+a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the

@@ -13,28 +13,29 @@
 \usage{
 tokenizer_delim(delim, quote = "\\"", na = "NA", quoted_na = TRUE,
   comment = "", trim_ws = TRUE, escape_double = TRUE,
-  escape_backslash = FALSE)
+  escape_backslash = FALSE, skip_empty_rows = TRUE)
 
-tokenizer_csv(na = "NA", quoted_na = TRUE, quote = "\\"", comment = "",
-  trim_ws = TRUE)
+tokenizer_csv(na = "NA", quoted_na = TRUE, quote = "\\"",
+  comment = "", trim_ws = TRUE, skip_empty_rows = TRUE)
 
-tokenizer_tsv(na = "NA", quoted_na = TRUE, quote = "\\"", comment = "",
-  trim_ws = TRUE)
+tokenizer_tsv(na = "NA", quoted_na = TRUE, quote = "\\"",
+  comment = "", trim_ws = TRUE, skip_empty_rows = TRUE)
 
-tokenizer_line(na = character())
+tokenizer_line(na = character(), skip_empty_rows = TRUE)
 
 tokenizer_log()
 
-tokenizer_fwf(begin, end, na = "NA", comment = "")
+tokenizer_fwf(begin, end, na = "NA", comment = "", trim_ws = TRUE,
+  skip_empty_rows = TRUE)
 
-tokenizer_ws(na = "NA", comment = "")
+tokenizer_ws(na = "NA", comment = "", skip_empty_rows = TRUE)
 }
 \arguments{
 \item{delim}{Single character used to separate fields within a record.}
 
 \item{quote}{Single character used to quote strings.}
 
-\item{na}{Character vector of strings to use for missing values. Set this
+\item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
 \item{quoted_na}{Should missing values inside quotes be treated as missing
@@ -54,6 +55,10 @@ a single quote, \code{\"}.}
 characters? This is more general than \code{escape_double} as backslashes
 can be used to escape the delimiter character, the quote character, or
 to add special characters like \code{\\n}.}
+
+\item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
+option is \code{TRUE} then blank rows will not be represented at all.  If it is
+\code{FALSE} then they will be represented by \code{NA} values in all the columns.}
 
 \item{begin, end}{Begin and end offsets for each file. These are C++
 offsets so the first column is column zero, and the ranges are

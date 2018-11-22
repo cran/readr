@@ -6,32 +6,43 @@
 \alias{spec_csv2}
 \alias{spec_tsv}
 \alias{spec_table}
+\alias{spec_table2}
 \title{Generate a column specification}
 \usage{
 spec_delim(file, delim, quote = "\\"", escape_backslash = FALSE,
   escape_double = TRUE, col_names = TRUE, col_types = NULL,
   locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
   comment = "", trim_ws = FALSE, skip = 0, n_max = 0,
-  guess_max = 1000, progress = show_progress())
+  guess_max = 1000, progress = show_progress(),
+  skip_empty_rows = TRUE)
 
 spec_csv(file, col_names = TRUE, col_types = NULL,
   locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
-  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0, n_max = 0,
-  guess_max = 1000, progress = show_progress())
+  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0,
+  n_max = 0, guess_max = 1000, progress = show_progress(),
+  skip_empty_rows = TRUE)
 
 spec_csv2(file, col_names = TRUE, col_types = NULL,
   locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
-  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0, n_max = 0,
-  guess_max = 1000, progress = show_progress())
+  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0,
+  n_max = 0, guess_max = 1000, progress = show_progress(),
+  skip_empty_rows = TRUE)
 
 spec_tsv(file, col_names = TRUE, col_types = NULL,
   locale = default_locale(), na = c("", "NA"), quoted_na = TRUE,
-  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0, n_max = 0,
-  guess_max = 1000, progress = show_progress())
+  quote = "\\"", comment = "", trim_ws = TRUE, skip = 0,
+  n_max = 0, guess_max = 1000, progress = show_progress(),
+  skip_empty_rows = TRUE)
 
 spec_table(file, col_names = TRUE, col_types = NULL,
   locale = default_locale(), na = "NA", skip = 0, n_max = 0,
-  guess_max = 1000, progress = show_progress(), comment = "")
+  guess_max = 1000, progress = show_progress(), comment = "",
+  skip_empty_rows = TRUE)
+
+spec_table2(file, col_names = TRUE, col_types = NULL,
+  locale = default_locale(), na = "NA", skip = 0, n_max = 0,
+  guess_max = 1000, progress = show_progress(), comment = "",
+  skip_empty_rows = TRUE)
 }
 \arguments{
 \item{file}{Either a path to a file, a connection, or literal data
@@ -44,7 +55,10 @@ downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. It must contain at
-least one new line to be recognised as data (instead of a path).}
+least one new line to be recognised as data (instead of a path) or be a
+vector of greater than length 1.
+
+Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
 \item{delim}{Single character used to separate fields within a record.}
 
@@ -75,7 +89,7 @@ in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
 will generate a warning and be made unique with a numeric prefix.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
-a string. See \code{vignette("column-types")} for more details.
+a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
@@ -97,7 +111,7 @@ The default locale is US-centric (like R), but you can use
 the default time zone, encoding, decimal mark, big mark, and day/month
 names.}
 
-\item{na}{Character vector of strings to use for missing values. Set this
+\item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
 \item{quoted_na}{Should missing values inside quotes be treated as missing
@@ -120,6 +134,10 @@ in an interactive session and not while knitting a document. The display
 is updated every 50,000 values and will only display if estimated reading
 time is 5 seconds or more. The automatic progress bar can be disabled by
 setting option \code{readr.show_progress} to \code{FALSE}.}
+
+\item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
+option is \code{TRUE} then blank rows will not be represented at all.  If it is
+\code{FALSE} then they will be represented by \code{NA} values in all the columns.}
 }
 \value{
 The \code{col_spec} generated for the file.

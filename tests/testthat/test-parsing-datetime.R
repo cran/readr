@@ -167,6 +167,16 @@ test_that("locale affects months", {
   expect_equal(parse_date("1 janvier 2010", "%d %B %Y", locale = fr), jan1)
 })
 
+test_that("locale affects day of week", {
+  a <- parse_datetime("2010-01-01")
+  b <- parse_date("2010-01-01")
+  fr <- locale("fr")
+  expect_equal(parse_datetime("Ven. 1 janv. 2010", "%a %d %b %Y", locale=fr), a)
+  expect_equal(parse_date("Ven. 1 janv. 2010", "%a %d %b %Y", locale=fr), b)
+  expect_warning(parse_datetime("Fri 1 janv. 1020", "%a %d %b %Y", locale=fr))
+  expect_warning(parse_date("Fri 1 janv. 2010", "%a %d %b %Y", locale=fr))
+})
+
 test_that("locale affects am/pm", {
   a <- parse_time("1:30 PM", "%H:%M %p")
   b <- parse_time("오후 1시 30분", "%p %H시 %M분", locale = locale("ko"))
@@ -246,5 +256,5 @@ test_that("must have either two - or none", {
   expect_equal(guess_parser("2000-10-10"), "date")
   expect_equal(guess_parser("2000-1010"), "character")
   expect_equal(guess_parser("200010-10"), "character")
-  expect_equal(guess_parser("20001010"), "integer")
+  expect_equal(guess_parser("20001010"), "double")
 })

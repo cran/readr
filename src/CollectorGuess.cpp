@@ -5,11 +5,12 @@ using namespace Rcpp;
 #include "DateTimeParser.h"
 #include "LocaleInfo.h"
 #include "QiParsers.h"
+#include "utils.h"
 
 typedef bool (*canParseFun)(const std::string&, LocaleInfo* pLocale);
 
-bool canParse(CharacterVector x, const canParseFun& canParse,
-              LocaleInfo* pLocale) {
+bool canParse(
+    CharacterVector x, const canParseFun& canParse, LocaleInfo* pLocale) {
   for (int i = 0; i < x.size(); ++i) {
     if (x[i] == NA_STRING)
       continue;
@@ -32,17 +33,9 @@ bool allMissing(CharacterVector x) {
 }
 
 bool isLogical(const std::string& x, LocaleInfo* pLocale) {
-  return x == "T" || x == "F" || x == "TRUE" || x == "FALSE";
-}
-
-bool isInteger(const std::string& x, LocaleInfo* pLocale) {
-  if (x[0] == '0' && x.size() > 1)
-    return false;
-
-  int res = 0;
-  std::string::const_iterator begin = x.begin(), end = x.end();
-
-  return parseInt(begin, end, res) && begin == end;
+  const char* const str = x.data();
+  bool res = isLogical(str, str + x.size());
+  return res;
 }
 
 bool isNumber(const std::string& x, LocaleInfo* pLocale) {
@@ -53,9 +46,20 @@ bool isNumber(const std::string& x, LocaleInfo* pLocale) {
   double res = 0;
   std::string::const_iterator begin = x.begin(), end = x.end();
 
-  bool ok = parseNumber(pLocale->decimalMark_, pLocale->groupingMark_,
-    begin, end, res);
+  bool ok = parseNumber(
+      pLocale->decimalMark_, pLocale->groupingMark_, begin, end, res);
   return ok && begin == x.begin() && end == x.end();
+}
+
+bool isInteger(const std::string& x, LocaleInfo* pLocale) {
+  // Leading zero
+  if (x[0] == '0' && x.size() > 1)
+    return false;
+
+  double res = 0;
+  std::string::const_iterator begin = x.begin(), end = x.end();
+
+  return parseInt(begin, end, res) && begin == end;
 }
 
 bool isDouble(const std::string& x, LocaleInfo* pLocale) {
@@ -100,16 +104,22 @@ static bool isDateTime(const std::string& x, LocaleInfo* pLocale) {
 }
 
 // [[Rcpp::export]]
-std::string collectorGuess(CharacterVector input, List locale_) {
+std::string
+collectorGuess(CharacterVector input, List locale_, bool guessInteger = false) {
   LocaleInfo locale(locale_);
 
-  if (input.size() == 0 || allMissing(input))
+  if (input.size() == 0) {
     return "character";
+  }
+
+  if (allMissing(input)) {
+    return "logical";
+  }
 
   // Work from strictest to most flexible
   if (canParse(input, isLogical, &locale))
     return "logical";
-  if (canParse(input, isInteger, &locale))
+  if (guessInteger && canParse(input, isInteger, &locale))
     return "integer";
   if (canParse(input, isDouble, &locale))
     return "double";

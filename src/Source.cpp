@@ -3,8 +3,8 @@ using namespace Rcpp;
 
 #include "Source.h"
 #include "SourceFile.h"
-#include "SourceString.h"
 #include "SourceRaw.h"
+#include "SourceString.h"
 
 SourcePtr Source::create(List spec) {
   std::string subclass(as<CharacterVector>(spec.attr("class"))[0]);
@@ -15,10 +15,11 @@ SourcePtr Source::create(List spec) {
   if (subclass == "source_raw") {
     return SourcePtr(new SourceRaw(as<RawVector>(spec[0]), skip, comment));
   } else if (subclass == "source_string") {
-    return SourcePtr(new SourceString(as<CharacterVector>(spec[0]), skip, comment));
+    return SourcePtr(
+        new SourceString(as<CharacterVector>(spec[0]), skip, comment));
   } else if (subclass == "source_file") {
-    std::string path(as<CharacterVector>(spec[0])[0]);
-    return SourcePtr(new SourceFile(path, skip, comment));
+    CharacterVector path(spec[0]);
+    return SourcePtr(new SourceFile(Rf_translateChar(path[0]), skip, comment));
   }
 
   Rcpp::stop("Unknown source type");

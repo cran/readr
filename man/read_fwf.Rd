@@ -8,9 +8,10 @@
 \alias{fwf_cols}
 \title{Read a fixed width file into a tibble}
 \usage{
-read_fwf(file, col_positions, col_types = NULL, locale = default_locale(),
-  na = c("", "NA"), comment = "", skip = 0, n_max = Inf,
-  guess_max = min(n_max, 1000), progress = show_progress())
+read_fwf(file, col_positions, col_types = NULL,
+  locale = default_locale(), na = c("", "NA"), comment = "",
+  trim_ws = TRUE, skip = 0, n_max = Inf, guess_max = min(n_max,
+  1000), progress = show_progress(), skip_empty_rows = TRUE)
 
 fwf_empty(file, skip = 0, col_names = NULL, comment = "", n = 100L)
 
@@ -31,7 +32,10 @@ downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. It must contain at
-least one new line to be recognised as data (instead of a path).}
+least one new line to be recognised as data (instead of a path) or be a
+vector of greater than length 1.
+
+Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
 \item{col_positions}{Column positions, as created by \code{\link[=fwf_empty]{fwf_empty()}},
 \code{\link[=fwf_widths]{fwf_widths()}} or \code{\link[=fwf_positions]{fwf_positions()}}. To read in only selected fields,
@@ -39,7 +43,7 @@ use \code{\link[=fwf_positions]{fwf_positions()}}. If the width of the last colu
 ragged fwf file), supply the last end position as NA.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
-a string. See \code{vignette("column-types")} for more details.
+a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
@@ -61,11 +65,14 @@ The default locale is US-centric (like R), but you can use
 the default time zone, encoding, decimal mark, big mark, and day/month
 names.}
 
-\item{na}{Character vector of strings to use for missing values. Set this
+\item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
+
+\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+each field before parsing it?}
 
 \item{skip}{Number of lines to skip before reading data.}
 
@@ -78,6 +85,10 @@ in an interactive session and not while knitting a document. The display
 is updated every 50,000 values and will only display if estimated reading
 time is 5 seconds or more. The automatic progress bar can be disabled by
 setting option \code{readr.show_progress} to \code{FALSE}.}
+
+\item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
+option is \code{TRUE} then blank rows will not be represented at all.  If it is
+\code{FALSE} then they will be represented by \code{NA} values in all the columns.}
 
 \item{col_names}{Either NULL, or a character vector column names.}
 
@@ -92,10 +103,9 @@ Use NA as last end field when reading a ragged fwf file.}
 
 \item{...}{If the first element is a data frame,
 then it must have all numeric columns and either one or two rows.
-The column names are the variable names, and the column values are the
-variable widths if a length one vector, and variable start and end
-positions.
-Otherwise, the elements of \code{...} are used to construct a data frame
+The column names are the variable names. The column values are the
+variable widths if a length one vector, and if length two, variable start and end
+positions. The elements of \code{...} are used to construct a data frame
 with or or two rows as above.}
 }
 \description{
@@ -115,9 +125,9 @@ read_fwf(fwf_sample, fwf_empty(fwf_sample, col_names = c("first", "last", "state
 # 2. A vector of field widths
 read_fwf(fwf_sample, fwf_widths(c(20, 10, 12), c("name", "state", "ssn")))
 # 3. Paired vectors of start and end positions
-read_fwf(fwf_sample, fwf_positions(c(1, 30), c(10, 42), c("name", "ssn")))
+read_fwf(fwf_sample, fwf_positions(c(1, 30), c(20, 42), c("name", "ssn")))
 # 4. Named arguments with start and end positions
-read_fwf(fwf_sample, fwf_cols(name = c(1, 10), ssn = c(30, 42)))
+read_fwf(fwf_sample, fwf_cols(name = c(1, 20), ssn = c(30, 42)))
 # 5. Named arguments with column widths
 read_fwf(fwf_sample, fwf_cols(name = 20, state = 10, ssn = 12))
 }
