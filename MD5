@@ -1,7 +1,7 @@
-2df0f0ca2b6706b2d2de0110d9830062 *DESCRIPTION
+858073d9b38c876ad56204633faf148a *DESCRIPTION
 b234ee4d69f5fce4486a80fdaf4a4263 *LICENSE
 a574f75f8b45ffba064a776fc2394680 *NAMESPACE
-8da8331cfd78d765b6e56a1d60d74266 *NEWS.md
+f8f3360148f517141e23db13682870ce *NEWS.md
 4d8cd06e6accb7e97c45d9f1ec38b95d *R/POSIXct.R
 7c0a3af7db241987d552c2272c20dcec *R/RcppExports.R
 2c4a96d76184cda93a0bf220b94d686a *R/callback.R
@@ -42,7 +42,7 @@ fc48bfd076b988f2cb07db5c8f6e4734 *README.md
 f3fa000568ab1835d00ae8832ce8cf25 *inst/doc/locales.html
 44ef2e88bc8af75c262c857c0cc0886e *inst/doc/readr.R
 6e37a02f3b4706917e9f2acb26cfdc6b *inst/doc/readr.Rmd
-250b5f8bf4a5a6537a6386606a026d88 *inst/doc/readr.html
+4081a6b3760f8181d5e21d7079f619b1 *inst/doc/readr.html
 b05a668d9a4de93b5dd397cfde7905b1 *inst/extdata/challenge.csv
 fa584bf0652806be23f04c9938ec0ec8 *inst/extdata/epa78.txt
 9dc92f35a3293d75ce989e1e694a57c7 *inst/extdata/example.log
@@ -176,7 +176,7 @@ fe0ffbd198f07fc804de2d0194e114b6 *tests/testthat/test-col-spec.R
 49f45122bf5405b102b2ba0e3ce24387 *tests/testthat/test-eol.R
 821a2c544a118cd8c2a4f53585d52524 *tests/testthat/test-locale.R
 ee814c6f408b27e544e1362f67853018 *tests/testthat/test-melt-chunked.R
-37a5f8e36310c95df9bf4bee6abd0b00 *tests/testthat/test-melt-csv.R
+54162d477b0298e3825b2fb18508bd88 *tests/testthat/test-melt-csv.R
 f351e661b87dfa63bc94c4bceeff4cad *tests/testthat/test-melt-fwf.R
 186880af773076989f6af7cc21de1e96 *tests/testthat/test-melt-table.R
 aeb55355f96316f4e1c3afa810c9b749 *tests/testthat/test-parsing-character.R
@@ -189,7 +189,7 @@ f11b6f6d560a6a2fc4b55d76e6f68b6a *tests/testthat/test-parsing-numeric.R
 e413a7173eba27678274de75d0426735 *tests/testthat/test-parsing.R
 75cbb003d6413c95b9690e822d1ecb55 *tests/testthat/test-problems.R
 2fb2fb6c8ab03ba4671be07c84654940 *tests/testthat/test-read-chunked.R
-26e720f5576a52ff9ed5e2a0740e5cd9 *tests/testthat/test-read-csv.R
+2e109260add57316265d098d71c43687 *tests/testthat/test-read-csv.R
 a062991971d9e321473fc1267179312c *tests/testthat/test-read-file.R
 198a6335bbf362702b2fd3e421dd9582 *tests/testthat/test-read-fwf.R
 d0d0d867482a456b7b8fda67faff1a75 *tests/testthat/test-read-lines.R
