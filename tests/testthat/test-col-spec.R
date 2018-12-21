@@ -198,7 +198,7 @@ test_that("print(col_spec) with no columns specified", {
 test_that("print(col_spec) and condense edge cases", {
   out <- cols(a = col_integer(), b = col_integer(), c = col_double())
 
-  expect_equal(format(out, n = 1, condense = TRUE),
+  expect_equal(format(out, n = 1, condense = TRUE, colour = FALSE),
 "cols(
   .default = col_integer(),
   c = col_double()
@@ -206,9 +206,20 @@ test_that("print(col_spec) and condense edge cases", {
 ")
 })
 
+test_that("print(col_spec) with colors", {
+  out <- col_spec_standardise(
+    "a,b,c,d,e,f,g,h,i\n1,2,F,a,2018-01-01,2018-01-01 12:01:01,12:01:01,foo,blah"
+    , col_types = c(b = "i", h = "f", i = "_")
+  )
+
+  with_crayon(
+    expect_known_output(out, "colour-test", print = TRUE)
+  )
+})
+
 test_that("non-syntatic names are escaped", {
   x <- read_csv("a b,_c,1,a`b\n1,2,3,4")
-  expect_equal(format(spec(x)),
+  expect_equal(format(spec(x), colour = FALSE),
 "cols(
   `a b` = col_double(),
   `_c` = col_double(),
@@ -219,7 +230,7 @@ test_that("non-syntatic names are escaped", {
 })
 
 test_that("long expressions are wrapped (597)", {
-  expect_equal(format(cols(a = col_factor(levels = c("apple", "pear", "banana", "peach", "apricot", "orange", "plum"), ordered = TRUE))),
+  expect_equal(format(cols(a = col_factor(levels = c("apple", "pear", "banana", "peach", "apricot", "orange", "plum"), ordered = TRUE)), colour = FALSE),
 'cols(
   a = col_factor(levels = c("apple", "pear", "banana", "peach", "apricot", "orange", "plum"
     ), ordered = TRUE, include_na = FALSE)
@@ -243,4 +254,8 @@ test_that("check_guess_max errors on invalid inputs", {
   expect_error(check_guess_max(-1), "`guess_max` must be a positive integer")
 
   expect_warning(check_guess_max(Inf), "`guess_max` is a very large value")
+})
+
+test_that("as.col_types can handle named character input", {
+  expect_equal(as.col_spec(c(a = "c")), cols(a = col_character()))
 })
