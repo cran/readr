@@ -11,6 +11,7 @@
 #' @return
 #'   `read_file`: A length 1 character vector.
 #'   `read_lines_raw`: A raw vector.
+#' @param x A single string, or a raw vector to write to disk.
 #' @export
 #' @examples
 #' read_file(file.path(R.home("doc"), "AUTHORS"))
@@ -44,22 +45,28 @@ read_file_raw <- function(file) {
 }
 
 #' @inherit write_lines
+#' @param path \Sexpr[results=rd, stage=render]{lifecycle::badge("deprecated")}
 #' @rdname read_file
 #' @export
-write_file <- function(x, path, append = FALSE) {
-  path <- standardise_path(path, input = FALSE)
-  if (!isOpen(path)) {
-    on.exit(close(path), add = TRUE)
+write_file <- function(x, file, append = FALSE, path = deprecated()) {
+  if (is_present(path)) {
+    deprecate_warn("1.4.0", "write_file(path = )", "write_file(file = )")
+    file <- path
+  }
+
+  file <- standardise_path(file, input = FALSE)
+  if (!isOpen(file)) {
+    on.exit(close(file), add = TRUE)
     if (isTRUE(append)) {
-      open(path, "ab")
+      open(file, "ab")
     } else {
-      open(path, "wb")
+      open(file, "wb")
     }
   }
   if (is.raw(x)) {
-    write_file_raw_(x, path)
+    write_file_raw_(x, file)
   } else {
-    write_file_(x, path)
+    write_file_(x, file)
   }
 
   invisible(x)

@@ -1,5 +1,3 @@
-context("read_fwf")
-
 test_that("trailing spaces ommitted", {
   spec <- fwf_empty("fwf-trailing.txt")
   expect_equal(spec$begin, c(0, 4))
@@ -101,7 +99,7 @@ test_that("read columns with width, ragged", {
 })
 
 test_that("read_fwf returns an empty data.frame on an empty file", {
-   expect_true(all.equal(read_fwf("empty-file", progress = FALSE), tibble::data_frame()))
+   expect_true(all.equal(read_fwf("empty-file", progress = FALSE), tibble::tibble()))
 })
 
 test_that("check for line breaks in between widths", {
@@ -123,9 +121,9 @@ test_that("check for line breaks in between widths", {
   expect_warning(out2 <- read_fwf(txt2, fwf_empty(txt2)))
   expect_equal(n_problems(out2), 2)
 
-  exp <- tibble::tibble(X1 = c(1L, 2L, 1L), X2 = c(1L, NA, 1L))
-  expect_true(all.equal(out1, exp))
-  expect_true(all.equal(out2, exp))
+  exp <- tibble::tibble(X1 = c(1, 2, 1), X2 = c(1, NA, 1))
+  expect_true(all.equal(out1, exp, check.attributes = FALSE))
+  expect_true(all.equal(out2, exp, check.attributes = FALSE))
 
 })
 
@@ -166,12 +164,12 @@ test_that("fwf spec can overlap", {
 # fwf_cols
 test_that("fwf_cols produces correct fwf_positions object with elements of length 2", {
   expected <- fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("a", "b", "d"))
-  expect_equivalent(fwf_cols(a = c(1, 2), b = c(9, 12), d = c(4, 6)), expected)
+  expect_equal(fwf_cols(a = c(1, 2), b = c(9, 12), d = c(4, 6)), expected, ignore_attr = TRUE)
 })
 
 test_that("fwf_cols produces correct fwf_positions object with elements of length 1", {
   expected <- fwf_widths(c(2L, 4L, 3L), c("a", "b", "c"))
-  expect_equivalent(fwf_cols(a = 2, b = 4, c = 3), expected)
+  expect_equal(fwf_cols(a = 2, b = 4, c = 3), expected, ignore_attr = TRUE)
 })
 
 
@@ -181,13 +179,15 @@ test_that("fwf_cols throws error when arguments are not length 1 or 2", {
 })
 
 test_that("fwf_cols works with unnamed columns", {
-  expect_equivalent(
+  expect_equal(
     fwf_cols(c(1, 2), c(9, 12), c(4, 6)),
-    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("X1", "X2", "X3"))
+    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("X1", "X2", "X3")),
+    ignore_attr = TRUE
   )
-  expect_equivalent(
+  expect_equal(
     fwf_cols(a = c(1, 2), c(9, 12), c(4, 6)),
-    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("a", "X2", "X3"))
+    fwf_positions(c(1L, 9L, 4L), c(2L, 12L, 6L), c("a", "X2", "X3")),
+    ignore_attr = TRUE
   )
 })
 
@@ -203,7 +203,7 @@ test_that("read_table skips all comment lines", {
 
   y <- read_table("#comment1\n#comment2\nfoo bar\n1   2\n3   4\n5   6\n", progress = FALSE, comment = "#")
 
-  expect_equal(x, y)
+  expect_equal(x[], y[])
 })
 
 test_that("read_table can read from a pipe (552)", {

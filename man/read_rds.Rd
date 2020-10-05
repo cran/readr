@@ -5,16 +5,29 @@
 \alias{write_rds}
 \title{Read/write RDS files.}
 \usage{
-read_rds(path)
+read_rds(file)
 
-write_rds(x, path, compress = c("none", "gz", "bz2", "xz"), ...)
+write_rds(
+  x,
+  file,
+  compress = c("none", "gz", "bz2", "xz"),
+  version = 2,
+  path = deprecated(),
+  ...
+)
 }
 \arguments{
-\item{path}{Path to read from/write to.}
+\item{file}{The file path to read from/write to.}
 
 \item{x}{R object to write to serialise.}
 
 \item{compress}{Compression method to use: "none", "gz" ,"bz", or "xz".}
+
+\item{version}{Serialization format version to be used. The default value is 2
+as it's compatible for R versions prior to 3.5.0. See \code{\link[base:readRDS]{base::saveRDS()}}
+for more details.}
+
+\item{path}{\Sexpr[results=rd, stage=render]{lifecycle::badge("deprecated")}}
 
 \item{...}{Additional arguments to connection function. For example, control
 the space-time trade-off of different compression methods with

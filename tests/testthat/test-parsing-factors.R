@@ -1,5 +1,3 @@
-context("Parsing, factors")
-
 test_that("strings mapped to levels", {
   x <- parse_factor(c("a", "b"), levels = c("a", "b"))
   expect_equal(x, factor(c("a", "b")))
@@ -50,10 +48,10 @@ test_that("NAs included in levels if desired", {
   expect_equal(x, factor(c(NA, "b", "a")))
 
   x <- parse_factor(c("NA", "b", "a"), levels = NULL, include_na = FALSE)
-  expect_equal(x, factor(c("NA", "b", "a"), levels = c("b", "a")))
+  expect_equal(x, factor(c(NA, "b", "a"), levels = c("b", "a")))
 
   x <- parse_factor(c("NA", "b", "a"), levels = NULL, include_na = TRUE)
-  expect_equal(x, factor(c("NA", "b", "a"), levels = c(NA, "b", "a"), exclude = NULL))
+  expect_equal(x, factor(c(NA, "b", "a"), levels = c(NA, "b", "a"), exclude = NULL))
 })
 
 test_that("Factors handle encodings properly (#615)", {
@@ -61,7 +59,7 @@ test_that("Factors handle encodings properly (#615)", {
     col_types = cols(col_factor(c("A", "\uC4"))),
     locale = locale(encoding = "latin1"), progress = FALSE)
 
-  expect_is(x$test, "factor")
+  expect_s3_class(x$test, "factor")
   expect_equal(x$test, factor(c("A", "\uC4")))
 })
 

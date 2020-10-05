@@ -1,7 +1,5 @@
-context("read_csv")
-
 test_that("read_csv col imputation, col_name detection and NA detection works", {
-  test_data <- read_csv("basic-df.csv", col_types = NULL, col_names = TRUE, progress = FALSE)
+  test_data <- read_csv(test_path("basic-df.csv"), col_types = list(), col_names = TRUE, progress = FALSE)
   expect_equal(unname(unlist(lapply(test_data, class))),
     c("logical", "numeric", "numeric", "character"))
   expect_equal(names(test_data), c("a", "b", "c", "d"))
@@ -67,6 +65,8 @@ test_that("can read more than 100 columns", {
 })
 
 test_that("encoding affects text and headers", {
+  skip_on_os("solaris")
+
   x <- read_csv("enc-iso-8859-1.txt", locale = locale(encoding = "ISO-8859-1"), progress = FALSE)
   expect_identical(names(x), "fran\u00e7ais")
   expect_identical(x[[1]], "\u00e9l\u00e8ve")
@@ -157,7 +157,7 @@ test_that("too few or extra col_types generates warnings", {
 test_that("decimal mark automatically set to ,", {
   expect_message(
     x <- read_csv2("x\n1,23", progress = FALSE),
-    if (default_locale()$decimal_mark == ".") "decimal .*grouping .*mark" else NA)
+    if (default_locale()$decimal_mark == ".") "decimal .*grouping mark" else NA)
   expect_equal(x[[1]], 1.23)
 })
 
@@ -184,6 +184,12 @@ test_that("empty file with col_names and col_types creates correct columns", {
   expect_equal(class(x$b), "integer")
 })
 
+test_that("empty file returns an empty tibble", {
+  file.create("foo.csv")
+  expect_equal(read_csv("foo.csv"), tibble::tibble())
+  file.remove("foo.csv")
+})
+
 
 # Comments ----------------------------------------------------------------
 
@@ -203,14 +209,14 @@ test_that("comments are ignored regardless of where they appear", {
   expect_warning(out6 <- read_csv("x1,x2,x3\nA2,B2,C2\nA3,#B2,C2\nA4,A5,A6", comment = "#", progress = FALSE))
   expect_warning(out7 <- read_csv("x1,x2,x3\nA2,B2,C2\nA3,#B2,C2\n#comment\nA4,A5,A6", comment = "#", progress = FALSE))
 
-  chk <- tibble::data_frame(
+  chk <- tibble::tibble(
     x1 = c("A2", "A3", "A4"),
     x2 = c("B2", NA_character_, "A5"),
     x3 = c("C2", NA_character_, "A6"))
 
-  expect_true(all.equal(chk, out5))
-  expect_true(all.equal(chk, out6))
-  expect_true(all.equal(chk, out7))
+  expect_true(all.equal(chk, out5, check.attributes = FALSE))
+  expect_true(all.equal(chk, out6, check.attributes = FALSE))
+  expect_true(all.equal(chk, out7, check.attributes = FALSE))
 })
 
 test_that("escaped/quoted comments are ignored", {
@@ -258,7 +264,7 @@ test_that("skip respects newlines", {
 })
 
 test_that("read_csv returns an empty data.frame on an empty file", {
-   expect_true(all.equal(read_csv("empty-file", progress = FALSE), tibble::data_frame()))
+   expect_true(all.equal(read_csv("empty-file", progress = FALSE), tibble::tibble()))
 })
 
 test_that("read_delim errors on length 0 delimiter (557)", {

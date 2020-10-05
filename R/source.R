@@ -35,7 +35,7 @@
 #' con <- rawConnection(charToRaw("abc\n123"))
 #' datasource(con)
 #' close(con)
-datasource <- function(file, skip = 0, skip_empty_rows = FALSE, comment = "") {
+datasource <- function(file, skip = 0, skip_empty_rows = FALSE, comment = "", skip_quote = TRUE) {
   if (inherits(file, "source")) {
 
     # If `skip` and `comment` arguments are expliictly passed, we want to use
@@ -50,20 +50,20 @@ datasource <- function(file, skip = 0, skip_empty_rows = FALSE, comment = "") {
 
     file
   } else if (is.connection(file)) {
-    datasource_connection(file, skip, skip_empty_rows, comment)
+    datasource_connection(file, skip, skip_empty_rows, comment, skip_quote)
   } else if (is.raw(file)) {
-    datasource_raw(file, skip, skip_empty_rows, comment)
+    datasource_raw(file, skip, skip_empty_rows, comment, skip_quote)
   } else if (is.character(file)) {
     if (length(file) > 1) {
-      datasource_string(paste(file, collapse = "\n"), skip, skip_empty_rows, comment)
+      datasource_string(paste(file, collapse = "\n"), skip, skip_empty_rows, comment, skip_quote)
     } else if (grepl("\n", file)) {
-      datasource_string(file, skip, skip_empty_rows, comment)
+      datasource_string(file, skip, skip_empty_rows, comment, skip_quote)
     } else {
       file <- standardise_path(file)
       if (is.connection(file)) {
-        datasource_connection(file, skip, skip_empty_rows, comment)
+        datasource_connection(file, skip, skip_empty_rows, comment, skip_quote)
       } else {
-        datasource_file(file, skip, skip_empty_rows, comment)
+        datasource_file(file, skip, skip_empty_rows, comment, skip_quote)
       }
     }
   } else {
@@ -73,45 +73,45 @@ datasource <- function(file, skip = 0, skip_empty_rows = FALSE, comment = "") {
 
 # Constructors -----------------------------------------------------------------
 
-new_datasource <- function(type, x, skip, skip_empty_rows = TRUE, comment = "", ...) {
-  structure(list(x, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, ...),
+new_datasource <- function(type, x, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE, ...) {
+  structure(list(x, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote, ...),
     class = c(paste0("source_", type), "source"))
 }
 
-datasource_string <- function(text, skip, skip_empty_rows = TRUE, comment = "") {
-  new_datasource("string", text, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment)
+datasource_string <- function(text, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE) {
+  new_datasource("string", text, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote)
 }
 
-datasource_file <- function(path, skip, skip_empty_rows = TRUE, comment = "", ...) {
+datasource_file <- function(path, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE, ...) {
   path <- check_path(path)
-  new_datasource("file", path, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, ...)
+  new_datasource("file", path, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote, ...)
 }
 
-datasource_connection <- function(path, skip, skip_empty_rows = TRUE, comment = "") {
+datasource_connection <- function(path, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE) {
   # We read the connection to a temporary file, then register a finalizer to
   # cleanup the temp file after the datasource object is removed.
 
   file <- read_connection(path)
   env <- new.env(parent = emptyenv())
   reg.finalizer(env, function(env) unlink(file))
-  datasource_file(file, skip, skip_empty_rows = skip_empty_rows, comment = comment, env = env)
+  datasource_file(file, skip, skip_empty_rows = skip_empty_rows, comment = comment, env = env, skip_quote = skip_quote)
 }
 
-datasource_raw <- function(text, skip, skip_empty_rows, comment) {
-  new_datasource("raw", text, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment)
+datasource_raw <- function(text, skip, skip_empty_rows, comment, skip_quote = TRUE) {
+  new_datasource("raw", text, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote)
 }
 
 # Helpers ----------------------------------------------------------------------
 
-read_connection <- function(con) {
+read_connection <- function(con, chunk_size = 64L * 1024L) {
   stopifnot(is.connection(con))
 
   if (!isOpen(con)) {
-    open(con, "rb")
     on.exit(close(con), add = TRUE)
+    open(con, "rb")
   }
 
-  read_connection_(con, tempfile())
+  read_connection_(con, tempfile(), chunk_size)
 }
 
 standardise_path <- function(path, input = TRUE) {
@@ -129,7 +129,7 @@ standardise_path <- function(path, input = TRUE) {
     if (requireNamespace("curl", quietly = TRUE)) {
       con <- curl::curl(path)
     } else {
-      message("`curl` package not installed, falling back to using `url()`")
+      cli::cli_alert_warning("{.pkg curl} package not installed, falling back to using {.fn url}")
       con <- url(path)
     }
     ext <- tolower(tools::file_ext(path))
@@ -149,8 +149,11 @@ standardise_path <- function(path, input = TRUE) {
 
   if (isTRUE(input)) {
     path <- check_path(path)
+    compression <- detect_compression(path)
+  } else {
+    compression <- tools::file_ext(path)
   }
-  switch(tolower(tools::file_ext(path)),
+  switch(compression,
     gz = gzfile(path, ""),
     bz2 = bzfile(path, ""),
     xz = xzfile(path, ""),
@@ -205,7 +208,7 @@ zipfile <- function(path, open = "r") {
   file <- files$Name[[1]]
 
   if (nrow(files) > 1) {
-    message("Multiple files in zip: reading '", file, "'")
+    suppressWarnings(cli::cli_alert_warning("Multiple files in zip: reading {.file '{file}'}"))
   }
 
   unz(path, file, open = open)
@@ -222,4 +225,56 @@ empty_file <- function(x) {
 #' @export
 clipboard <- function() {
   clipr::read_clip()
+}
+
+detect_compression <- function(path) {
+  bytes <- readBin(path, "raw", n = 6)
+  if (length(bytes) >= 2 && bytes[[1]] == 0x1f && bytes[[2]] == 0x8b) {
+    return("gz")
+  }
+  if (length(bytes) >= 6 &&
+    bytes[[1]] == 0xFD &&
+    bytes[[2]] == 0x37 &&
+    bytes[[3]] == 0x7A &&
+    bytes[[4]] == 0x58 &&
+    bytes[[5]] == 0x5A &&
+    bytes[[6]] == 0x00) {
+    return("xz")
+  }
+
+  if (length(bytes) >= 3 &&
+    bytes[[1]] == 0x42 &&
+    bytes[[2]] == 0x5a &&
+    bytes[[3]] == 0x68) {
+    return("bz2")
+  }
+
+  # normal zip
+  if (length(bytes) >= 4 &&
+    bytes[[1]] == 0x50 &&
+    bytes[[2]] == 0x4B &&
+    bytes[[3]] == 0x03 &&
+    bytes[[4]] == 0x04) {
+    return("zip")
+  }
+
+  # empty zip
+  if (length(bytes) >= 4 &&
+    bytes[[1]] == 0x50 &&
+    bytes[[2]] == 0x4B &&
+    bytes[[3]] == 0x05 &&
+    bytes[[4]] == 0x06) {
+    return("zip")
+  }
+
+  # spanned zip
+  if (length(bytes) >= 4 &&
+    bytes[[1]] == 0x50 &&
+    bytes[[2]] == 0x4B &&
+    bytes[[3]] == 0x07 &&
+    bytes[[4]] == 0x08) {
+    return("zip")
+  }
+
+  NA_character_
 }

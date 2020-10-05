@@ -2,8 +2,9 @@
 #define FASTREAD_SOURCEFILE_H_
 
 #include "Source.h"
+#include "cpp11/protect.hpp"
+
 #include "boost.h"
-#include <Rcpp.h>
 
 class SourceFile : public Source {
   boost::interprocess::file_mapping fm_;
@@ -17,14 +18,15 @@ public:
       const std::string& path,
       int skip = 0,
       bool skipEmptyRows = true,
-      const std::string& comment = "") {
+      const std::string& comment = "",
+      bool skipQuotes = true) {
     try {
       fm_ = boost::interprocess::file_mapping(
           path.c_str(), boost::interprocess::read_only);
       mr_ = boost::interprocess::mapped_region(
           fm_, boost::interprocess::read_private);
     } catch (boost::interprocess::interprocess_exception& e) {
-      Rcpp::stop("Cannot read file %s: %s", path, e.what());
+      cpp11::stop("Cannot read file %s: %s", path.c_str(), e.what());
     }
 
     begin_ = static_cast<char*>(mr_.get_address());
@@ -34,7 +36,7 @@ public:
     begin_ = skipBom(begin_, end_);
 
     // Skip lines, if needed
-    begin_ = skipLines(begin_, end_, skip, skipEmptyRows, comment);
+    begin_ = skipLines(begin_, end_, skip, skipEmptyRows, comment, skipQuotes);
   }
 
   const char* begin() { return begin_; }

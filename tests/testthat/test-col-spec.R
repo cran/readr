@@ -1,5 +1,3 @@
-context("col_spec")
-
 test_that("supplied col names must match non-skipped col types", {
   out <- col_spec_standardise(col_types = "c_c", col_names = c("a", "c"))
   expect_equal(names(out[[1]]), c("a", "", "c"))
@@ -51,7 +49,7 @@ test_that("defaults expanded to match names", {
 })
 
 test_that("col_spec_standardise works properly with 1 row inputs and no header columns (#333)", {
-  expect_is(col_spec_standardise("1\n", col_names = FALSE)[[1]]$X1, "collector_double")
+  expect_s3_class(col_spec_standardise("1\n", col_names = FALSE)[[1]]$X1, "collector_double")
 })
 
 test_that("warns about duplicated names", {
@@ -114,8 +112,10 @@ test_that("print(col_spec) with truncated output", {
 test_that("spec object attached to read data", {
 
   test_data <- read_csv("basic-df.csv", col_types = NULL, col_names = TRUE, progress = FALSE)
+  sp <- spec(test_data)
+  sp$skip <- NULL
 
-  expect_equal(spec(test_data),
+  expect_equal(sp,
     cols(
        a = col_logical(),
        b = col_double(),
@@ -258,4 +258,21 @@ test_that("check_guess_max errors on invalid inputs", {
 
 test_that("as.col_types can handle named character input", {
   expect_equal(as.col_spec(c(a = "c")), cols(a = col_character()))
+})
+
+test_that("as.col_types can convert data.frame", {
+  spec <- as.col_spec(iris)
+  exp <- cols(
+    Sepal.Length = col_double(),
+    Sepal.Width = col_double(),
+    Petal.Length = col_double(),
+    Petal.Width = col_double(),
+    Species = col_factor(levels = c("setosa", "versicolor", "virginica"), ordered = FALSE, include_na = FALSE)
+  )
+  expect_equal(spec, exp)
+})
+
+test_that("as.character() works on col_spec objects", {
+  spec <- as.col_spec(iris)
+  expect_equal(as.character(spec), "ddddf")
 })

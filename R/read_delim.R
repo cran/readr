@@ -1,5 +1,4 @@
 #' @useDynLib readr, .registration = TRUE
-#' @importClassesFrom Rcpp "C++Object"
 NULL
 
 #' Read a delimited file (including csv & tsv) into a tibble
@@ -24,7 +23,7 @@ NULL
 #'
 #'   Missing (`NA`) column names will generate a warning, and be filled
 #'   in with dummy names `X1`, `X2` etc. Duplicate column names
-#'   will generate a warning and be made unique with a numeric prefix.
+#'   will generate a warning and be made unique with a numeric suffix.
 #' @param col_types One of `NULL`, a [cols()] specification, or
 #'   a string. See `vignette("readr")` for more details.
 #'
@@ -38,9 +37,21 @@ NULL
 #'
 #'   Alternatively, you can use a compact string representation where each
 #'   character represents one column:
-#'   c = character, i = integer, n = number, d = double,
-#'   l = logical, f = factor, D = date, T = date time, t = time, ? = guess, or
-#'   `_`/`-` to skip the column.
+#' - c = character
+#' - i = integer
+#' - n = number
+#' - d = double
+#' - l = logical
+#' - f = factor
+#' - D = date
+#' - T = date time
+#' - t = time
+#' - ? = guess
+#' - _ or - = skip
+#'
+#'    By default, reading a file without a column specification will print a
+#'    message showing what `readr` guessed they were. To remove this message,
+#'    use `col_types = cols()`.
 #' @param locale The locale controls defaults that vary from place to place.
 #'   The default locale is US-centric (like R), but you can use
 #'   [locale()] to create your own locale that controls things like
@@ -137,7 +148,7 @@ read_csv2 <- function(file, col_names = TRUE, col_types = NULL,
                       skip_empty_rows = TRUE) {
 
   if (locale$decimal_mark == ".") {
-    message("Using ',' as decimal and '.' as grouping mark. Use read_delim() for more control.")
+    cli::cli_alert_info("Using {.val ','} as decimal and {.val '.'} as grouping mark. Use {.fn read_delim} for more control.")
     locale$decimal_mark <- ","
     locale$grouping_mark <- "."
   }
@@ -181,12 +192,15 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
   file <- standardise_path(file)
   if (is.connection(file)) {
     data <- datasource_connection(file, skip, skip_empty_rows, comment)
+    if (empty_file(data[[1]])) {
+       return(tibble::tibble())
+    }
   } else {
-    if (empty_file(file)) {
-       return(tibble::data_frame())
+    if (!isTRUE(grepl("\n", file)[[1]]) && empty_file(file)) {
+       return(tibble::tibble())
     }
     if (is.character(file) && identical(locale$encoding, "UTF-8")) {
-      # When locale is not set, file is probablly marked as its correct encoding.
+      # When locale is not set, file is probably marked as its correct encoding.
       # As default_locale() assumes file is UTF-8, file should be encoded as UTF-8 for non-UTF-8 MBCS locales.
       data <- enc2utf8(file)
     } else {
@@ -201,7 +215,7 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
 
   ds <- datasource(data, skip = spec$skip, skip_empty_rows = skip_empty_rows, comment = comment)
 
-  if (is.null(col_types) && !inherits(ds, "source_string")) {
+  if (is.null(col_types) && !inherits(ds, "source_string") && !is_testing()) {
     show_cols_spec(spec)
   }
 

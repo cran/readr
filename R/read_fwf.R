@@ -20,7 +20,7 @@
 #' @export
 #' @examples
 #' fwf_sample <- readr_example("fwf-sample.txt")
-#' cat(read_lines(fwf_sample))
+#' writeLines(read_lines(fwf_sample))
 #'
 #' # You can specify column positions in several ways:
 #' # 1. Guess based on position of empty columns
@@ -56,7 +56,7 @@ read_fwf <- function(file, col_positions, col_types = NULL,
     drop_skipped_names = TRUE
   )
 
-  if (is.null(col_types) && !inherits(ds, "source_string")) {
+  if (is.null(col_types) && !inherits(ds, "source_string") && !is_testing()) {
     show_cols_spec(spec)
   }
 
@@ -98,7 +98,7 @@ fwf_widths <- function(widths, col_names = NULL) {
 #' @export
 #' @param start,end Starting and ending (inclusive) positions of each field.
 #'    Use NA as last end field when reading a ragged fwf file.
-fwf_positions <- function(start, end = NULL, col_names = NULL) {
+fwf_positions <- function(start, end, col_names = NULL) {
 
   stopifnot(length(start) == length(end))
   col_names <- fwf_col_names(col_names, length(start))

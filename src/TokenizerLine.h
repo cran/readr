@@ -4,7 +4,6 @@
 #include "Token.h"
 #include "Tokenizer.h"
 #include "utils.h"
-#include <Rcpp.h>
 
 class TokenizerLine : public Tokenizer {
   SourceIterator begin_, cur_, end_;
@@ -40,14 +39,15 @@ public:
     if (!moreTokens_)
       return Token(TOKEN_EOF, line_, 0);
 
-    while (cur_ != end_) {
+    while (cur_ < end_) {
       Advance advance(&cur_);
 
       if (*cur_ == '\0')
         hasNull = true;
 
-      if ((end_ - cur_) % 131072 == 0)
-        Rcpp::checkUserInterrupt();
+      if ((end_ - cur_) % 131072 == 0) {
+        cpp11::check_user_interrupt();
+      }
 
       switch (*cur_) {
       case '\r':

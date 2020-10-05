@@ -1,6 +1,6 @@
-context("read_lines")
-
 test_that("read_lines respects encoding", {
+  skip_on_os("solaris")
+
   x <- read_lines("enc-iso-8859-1.txt", locale = locale(encoding = "ISO-8859-1"), progress = FALSE)
   expect_equal(x, c("fran\u00e7ais", "\u00e9l\u00e8ve"))
 })
@@ -24,7 +24,7 @@ test_that("blank lines are passed unchanged", {
   on.exit(unlink(tmp))
 
   x <- c("abc", "", "123")
-  write_lines(path = tmp, x)
+  write_lines(file = tmp, x)
   expect_equal(read_lines(tmp), x)
   expect_equal(read_lines(tmp, na = ""), c("abc", NA_character_, "123"))
 })
@@ -57,6 +57,34 @@ test_that("allocation works as expected", {
   x <- rep(paste(rep("a", 2 ^ 10), collapse = ''), 2 ^ 11)
   writeLines(x, tmp)
   expect_equal(length(read_lines(tmp)), 2^11)
+})
+
+test_that("read_lines(skip_empty_rows) works when blank lines are at the end of the file (#968)", {
+  skip_on_os("windows")
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp))
+
+  writeLines(con = tmp,
+"test
+")
+
+  expect_equal(read_lines(tmp, skip_empty_rows = TRUE), "test")
+})
+
+test_that("read_lines(skip_empty_rows) works if there are double quotes in the lines (#991)", {
+  data <-
+"a\"b
+cde
+f\"g
+hij"
+
+  expect_equal(
+    read_lines(data, skip = 1),
+    c("cde",
+      "f\"g",
+      "hij")
+  )
 })
 
 # These tests are slow so are commented out

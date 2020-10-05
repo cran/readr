@@ -127,6 +127,78 @@ as.col_spec.default <- function(x) {
   stop("`col_types` must be NULL, a list or a string", call. = FALSE)
 }
 
+type_to_col <- function(x, ...) {
+  UseMethod("type_to_col")
+}
+
+#' @export
+type_to_col.default <- function(x, ...) {
+  col_character()
+}
+
+#' @export
+type_to_col.logical <- function(x, ...) {
+  col_logical()
+}
+
+#' @export
+type_to_col.integer <- function(x, ...) {
+  col_integer()
+}
+
+#' @export
+type_to_col.double <- function(x, ...) {
+  col_double()
+}
+
+#' @export
+type_to_col.factor <- function(x, ...) {
+  col_factor(levels = levels(x), ordered = is.ordered(x), include_na = any(is.na(levels(x))))
+}
+
+#' @export
+type_to_col.Date <- function(x, ...) {
+  col_date()
+}
+
+#' @export
+type_to_col.POSIXct <- function(x, ...) {
+  col_datetime()
+}
+
+#' @export
+type_to_col.hms <- function(x, ...) {
+  col_time()
+}
+
+#' @export
+as.col_spec.data.frame <- function(x) {
+  as.col_spec(lapply(x, type_to_col))
+}
+
+col_to_short <- function(x, ...) {
+  switch(class(x)[[1]],
+    collector_character = "c",
+    collector_date = "D",
+    collector_datetime = "T",
+    collector_double = "d",
+    collector_factor = "f",
+    collector_guess = "?",
+    collector_integer = "i",
+    collector_logical = "l",
+    collector_number = "n",
+    collector_skip = "-",
+    collector_time = "t"
+  )
+}
+
+#' @export
+as.character.col_spec <- function(x, ...) {
+  paste0(collapse = "",
+    vapply(x$cols, col_to_short, character(1))
+  )
+}
+
 #' @export
 print.col_spec <- function(x, n = Inf, condense = NULL, colour = crayon::has_color(), ...) {
   cat(format.col_spec(x, n = n, condense = condense, colour = colour, ...))
@@ -249,11 +321,14 @@ colourise_cols <- function(cols, colourise = crayon::has_color()) {
 # Used in read_delim(), read_fwf() and type_convert()
 show_cols_spec <- function(spec, n = getOption("readr.num_columns", 20)) {
   if (n > 0) {
-    message("Parsed with column specification:\n",
-      format(spec, n = n, condense = NULL), appendLF = FALSE)
+    cli_block(class = "readr_spec_message", {
+    cli::cli_h1("Column specification")
+    txt <- strsplit(format(spec, n = n, condense = NULL), "\n")[[1]]
+    cli::cli_verbatim(txt)
     if (length(spec$cols) >= n) {
-      message("See spec(...) for full column specifications.")
+      cli::cli_alert_info("Use {.fn spec} for the full column specifications.")
     }
+  })
   }
 }
 
