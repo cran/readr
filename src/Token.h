@@ -24,8 +24,22 @@ class Token {
   Tokenizer* pTokenizer_;
 
 public:
-  Token() : type_(TOKEN_EMPTY), row_(0), col_(0) {}
-  Token(TokenType type, int row, int col) : type_(type), row_(row), col_(col) {}
+  Token()
+      : type_(TOKEN_EMPTY),
+        begin_(0),
+        end_(0),
+        row_(0),
+        col_(0),
+        hasNull_(false),
+        pTokenizer_(nullptr) {}
+  Token(TokenType type, int row, int col)
+      : type_(type),
+        begin_(0),
+        end_(0),
+        row_(row),
+        col_(col),
+        hasNull_(false),
+        pTokenizer_(nullptr) {}
   Token(
       SourceIterator begin,
       SourceIterator end,
@@ -47,7 +61,7 @@ public:
   std::string asString() const {
     switch (type_) {
     case TOKEN_STRING: {
-      boost::container::string buffer;
+      std::string buffer;
       SourceIterators string = getString(&buffer);
 
       return std::string(string.first, string.second);
@@ -76,7 +90,7 @@ public:
   SEXP asSEXP(Iconv* pEncoder) const {
     switch (type_) {
     case TOKEN_STRING: {
-      boost::container::string buffer;
+      std::string buffer;
       SourceIterators string = getString(&buffer);
 
       return pEncoder->makeSEXP(string.first, string.second, hasNull_);
@@ -88,7 +102,7 @@ public:
 
   TokenType type() const { return type_; }
 
-  SourceIterators getString(boost::container::string* pOut) const {
+  SourceIterators getString(std::string* pOut) const {
     if (pTokenizer_ == NULL)
       return std::make_pair(begin_, end_);
 

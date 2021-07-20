@@ -22,7 +22,8 @@ will be read with this column type.}
 \description{
 \code{cols()} includes all columns in the input data, guessing the column types
 as the default. \code{cols_only()} includes only the columns you explicitly
-specify, skipping the rest.
+specify, skipping the rest. In general you can substitute \code{list()} for
+\code{cols()} without changing the behavior.
 }
 \details{
 The available specifications are: (with string abbreviations in brackets)
@@ -53,10 +54,12 @@ cols(a = "i", b = "d", c = "_")
 
 t1 <- cols(
   column_one = col_integer(),
-  column_two = col_number())
+  column_two = col_number()
+)
 
 t2 <- cols(
- column_three = col_character())
+  column_three = col_character()
+)
 
 t3 <- t1
 t3$cols <- c(t1$cols, t2$cols)

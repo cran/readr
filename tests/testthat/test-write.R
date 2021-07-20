@@ -1,10 +1,10 @@
 test_that("strings are only quoted if needed", {
-  x <- c("a", ',')
+  x <- c("a", ",")
 
-  csv <- format_delim(data.frame(x), delim = ",",col_names = FALSE)
+  csv <- format_delim(data.frame(x), delim = ",", col_names = FALSE)
   expect_equal(csv, 'a\n\",\"\n')
-  ssv <- format_delim(data.frame(x), delim = " ",col_names = FALSE)
-  expect_equal(ssv, 'a\n,\n')
+  ssv <- format_delim(data.frame(x), delim = " ", col_names = FALSE)
+  expect_equal(ssv, "a\n,\n")
 })
 
 test_that("a literal NA is quoted", {
@@ -17,14 +17,14 @@ test_that("na argument modifies how missing values are written", {
 })
 
 test_that("read_delim/csv/tsv and write_delim round trip special chars", {
-  x <- c("a", '"', ",", "\n","at\t")
+  x <- c("a", '"', ",", "\n", "at\t")
 
   output <- data.frame(x)
-  input <- read_delim(format_delim(output, delim = " "), delim = " ", trim_ws = FALSE, progress = FALSE)
-  input_csv <- read_csv(format_delim(output, delim = ","), trim_ws = FALSE, progress = FALSE)
-  input_tsv <- read_tsv(format_delim(output, delim = "\t"), trim_ws = FALSE, progress = FALSE)
+  input <- read_delim(I(format_delim(output, delim = " ")), delim = " ", trim_ws = FALSE)
+  input_csv <- read_csv(I(format_delim(output, delim = ",")), trim_ws = FALSE)
+  input_tsv <- read_tsv(I(format_delim(output, delim = "\t")), trim_ws = FALSE)
   expect_equal(input$x, input_csv$x)
-  expect_equal(input_tsv$x,  x)
+  expect_equal(input_tsv$x, x)
 })
 
 test_that("special floating point values translated to text", {
@@ -39,7 +39,7 @@ test_that("logical values give long names", {
 
 test_that("roundtrip preserved floating point numbers", {
   input <- data.frame(x = runif(100))
-  output <- read_delim(format_delim(input, delim = " "), delim = " ", progress = FALSE)
+  output <- read_delim(I(format_delim(input, delim = " ")), delim = " ")
 
   expect_equal(input$x, output$x)
 })
@@ -50,17 +50,18 @@ test_that("roundtrip preserves dates and datetimes", {
   attr(y, "tzone") <- "UTC"
 
   input <- data.frame(x, y)
-  output <- read_delim(format_delim(input, delim = " "), delim = " ", progress = FALSE)
+  output <- read_delim(I(format_delim(input, delim = ",")), delim = ",")
 
   expect_equal(output$x, x)
   expect_equal(output$y, y)
 })
 
 test_that("fails to create file in non-existent directory", {
-  expect_warning(expect_error(write_csv(mtcars, file.path(tempdir(), "/x/y")), "cannot open the connection"), "No such file or directory")
+  expect_error(write_csv(mtcars, file.path(tempdir(), "/x/y")), "open")
 })
 
 test_that("write_excel_csv/csv2 includes a byte order mark", {
+  skip_if_edition_first()
   tmp <- tempfile()
   on.exit(unlink(tmp))
 
@@ -78,11 +79,12 @@ test_that("write_excel_csv/csv2 includes a byte order mark", {
   expect_equal(output2[1:3], charToRaw("\xEF\xBB\xBF"))
 
   # Rest of file also there
-  expect_equal(output[4:6], charToRaw("mpg"))
-  expect_equal(output2[4:6], charToRaw("mpg"))
+  expect_equal(output[4:8], charToRaw('"mpg"'))
+  expect_equal(output2[4:8], charToRaw('"mpg"'))
 })
 
 test_that("write_excel_csv/csv2 includes a byte order mark, but not when appending", {
+  skip_if_edition_first()
   tmp <- tempfile()
   on.exit(unlink(tmp))
 
@@ -93,7 +95,7 @@ test_that("write_excel_csv/csv2 includes a byte order mark, but not when appendi
   expect_equal(output[1:3], charToRaw("\xEF\xBB\xBF"))
 
   # But not in the rest of the file
-  expect_equal(output[-1:-3], charToRaw("a\n1\n2\n"))
+  expect_equal(output[-1:-3], charToRaw('"a"\n1\n2\n'))
 })
 
 test_that("does not writes a tailing .0 for whole number doubles", {
@@ -181,13 +183,12 @@ test_that("write_csv2 and format_csv2 use same precision as write.csv2 (#1087)",
 test_that("Can change the escape behavior for quotes", {
   df <- data.frame(x = c("a", '"', ",", "\n"))
 
-  expect_error(format_delim(df, "\t", quote_escape = "invalid"), "should be one of")
+  expect_error(format_delim(df, "\t", escape = "invalid"), "should be one of")
 
   expect_equal(format_delim(df, "\t"), "x\na\n\"\"\"\"\n,\n\"\n\"\n")
-  expect_equal(format_delim(df, "\t", quote_escape = "double"), "x\na\n\"\"\"\"\n,\n\"\n\"\n")
-  expect_equal(format_delim(df, "\t", quote_escape = "backslash"), "x\na\n\"\\\"\"\n,\n\"\n\"\n")
-  expect_equal(format_delim(df, "\t", quote_escape = "none"), "x\na\n\"\"\"\n,\n\"\n\"\n")
-  expect_equal(format_delim(df, "\t", quote_escape = FALSE), "x\na\n\"\"\"\n,\n\"\n\"\n")
+  expect_equal(format_delim(df, "\t", escape = "double"), "x\na\n\"\"\"\"\n,\n\"\n\"\n")
+  expect_equal(format_delim(df, "\t", escape = "backslash"), "x\na\n\"\\\"\"\n,\n\"\n\"\n")
+  expect_equal(format_delim(df, "\t", escape = "none"), "x\na\n\"\"\"\n,\n\"\n\"\n")
 })
 
 test_that("hms NAs are written without padding (#930)", {
@@ -195,18 +196,31 @@ test_that("hms NAs are written without padding (#930)", {
   expect_equal(format_tsv(df), "x\nNA\n00:00:34.234\n")
 })
 
-test_that("Show column name in error message when writing list column (#938)", {
-  df <- data.frame(x = LETTERS[1:4],
-                   y = I(list(1, "foo", 2:9, iris)))
-  expect_error(write_csv(df, "test_list_col_name.csv"),
-               "Don't know how to handle vector of type list in column 'y'.")
+test_that("Error when writing list columns or matrix columns", {
+  df <- data.frame(x = LETTERS[1:4], y = I(list(1, "foo", 2:9, iris)), z = I(matrix(1:16, nrow = 4)))
+  expect_error(
+    write_csv(df, tempfile()),
+    "`x` must not contain list or matrix columns"
+  )
+
+  df2 <- data.frame(x = LETTERS[1:4], y = I(matrix(1:40, nrow = 4)))
+  expect_error(
+    write_csv(df2, tempfile()),
+    "`x` must not contain list or matrix columns"
+  )
 })
 
-test_that("More helpful error when trying to write out data frames with list columns (#938)", {
-  df <- tibble::tibble(id = seq(1), list = list(1))
-  expect_error(write_csv(x = df, file = tempfile()), "Flat files can't store the list column")
-})
+test_that("duplicate columns data is duplicated (#1169)", {
+  df <- tibble::tibble(x = 1, x2 = 2)
+  names(df) <- c("x", "x")
 
+  f <- tempfile()
+  on.exit(unlink(f))
+
+  write_csv(df, f)
+
+  expect_equal(readLines(f), c("x,x", "1,2"))
+})
 
 test_that("write_ family of functions return input data frame without changes", {
   tmp <- tempfile()

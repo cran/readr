@@ -1,10 +1,10 @@
 #include "Iconv.h"
 #include "cpp11/protect.hpp"
-#include <string.h>
+#include <cstring>
 
 Iconv::Iconv(const std::string& from, const std::string& to) {
   if (from == "UTF-8") {
-    cd_ = NULL;
+    cd_ = nullptr;
   } else {
     cd_ = Riconv_open(to.c_str(), from.c_str());
     if (cd_ == (void*)-1) {
@@ -21,9 +21,9 @@ Iconv::Iconv(const std::string& from, const std::string& to) {
 }
 
 Iconv::~Iconv() {
-  if (cd_ != NULL) {
+  if (cd_ != nullptr) {
     Riconv_close(cd_);
-    cd_ = NULL;
+    cd_ = nullptr;
   }
 }
 
@@ -33,11 +33,14 @@ size_t Iconv::convert(const char* start, const char* end) {
   // Ensure buffer is big enough: one input byte can never generate
   // more than 4 output bytes
   size_t max_size = n * 4;
-  if (buffer_.size() < max_size)
+  if (buffer_.size() < max_size) {
     buffer_.resize(max_size);
+  }
 
   char* outbuf = &buffer_[0];
-  size_t inbytesleft = n, outbytesleft = max_size;
+  size_t inbytesleft = n;
+
+  size_t outbytesleft = max_size;
   size_t res = Riconv(cd_, &start, &inbytesleft, &outbuf, &outbytesleft);
 
   if (res == (size_t)-1) {
@@ -58,8 +61,9 @@ size_t Iconv::convert(const char* start, const char* end) {
 
 int my_strnlen(const char* s, int maxlen) {
   for (int n = 0; n < maxlen; ++n) {
-    if (s[n] == '\0')
+    if (s[n] == '\0') {
       return n;
+    }
   }
   return maxlen;
 }
@@ -81,16 +85,18 @@ SEXP safeMakeChar(const char* start, size_t n, bool hasNull) {
 }
 
 SEXP Iconv::makeSEXP(const char* start, const char* end, bool hasNull) {
-  if (cd_ == NULL)
+  if (cd_ == nullptr) {
     return safeMakeChar(start, end - start, hasNull);
+  }
 
   int n = convert(start, end);
   return safeMakeChar(&buffer_[0], n, hasNull);
 }
 
 std::string Iconv::makeString(const char* start, const char* end) {
-  if (cd_ == NULL)
+  if (cd_ == nullptr) {
     return std::string(start, end);
+  }
 
   int n = convert(start, end);
   return std::string(&buffer_[0], n);

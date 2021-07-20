@@ -8,6 +8,7 @@
 #include "Source.h"
 
 #include <sstream>
+#include <utility>
 
 struct skip_t {
   SourceIterator begin;
@@ -15,7 +16,7 @@ struct skip_t {
 };
 
 skip_t skip_comments(
-    SourceIterator begin, SourceIterator end, std::string comment = "") {
+    SourceIterator begin, SourceIterator end, const std::string& comment = "") {
   skip_t out;
   if (comment.length() == 0) {
     out.begin = begin;
@@ -25,8 +26,7 @@ skip_t skip_comments(
 
   SourceIterator cur = begin;
   int skip = 0;
-  boost::iterator_range<const char*> haystack(cur, end);
-  while (boost::starts_with(haystack, comment)) {
+  while (starts_with_comment(cur, end, comment)) {
     // Skip rest of line
     while (cur != end && *cur != '\n' && *cur != '\r') {
       ++cur;
@@ -34,7 +34,6 @@ skip_t skip_comments(
 
     advanceForLF(&cur, end);
     ++cur;
-    haystack = boost::iterator_range<const char*>(cur, end);
     ++skip;
   }
 
@@ -43,18 +42,18 @@ skip_t skip_comments(
   return out;
 }
 
-std::vector<bool> emptyCols_(
-    SourceIterator begin,
-    SourceIterator end,
-    size_t n = 100,
-    std::string comment = "") {
+std::vector<bool>
+emptyCols_(SourceIterator begin, SourceIterator end, size_t n = 100) {
 
   std::vector<bool> is_white;
 
-  size_t row = 0, col = 0;
+  size_t row = 0;
+
+  size_t col = 0;
   for (SourceIterator cur = begin; cur != end; ++cur) {
-    if (row > n)
+    if (row > n) {
       break;
+    }
 
     switch (*cur) {
     case '\n':
@@ -68,8 +67,9 @@ std::vector<bool> emptyCols_(
       break;
     default:
       // Make sure there's enough room
-      if (col >= is_white.size())
+      if (col >= is_white.size()) {
         is_white.resize(col + 1, true);
+      }
       is_white[col] = false;
       col++;
     }
@@ -79,13 +79,15 @@ std::vector<bool> emptyCols_(
 }
 
 [[cpp11::register]] cpp11::list
-whitespaceColumns(cpp11::list sourceSpec, int n, std::string comment) {
+whitespaceColumns(const cpp11::list& sourceSpec, int n, std::string comment) {
   SourcePtr source = Source::create(sourceSpec);
 
-  skip_t s = skip_comments(source->begin(), source->end(), comment);
+  skip_t s = skip_comments(source->begin(), source->end(), std::move(comment));
 
   std::vector<bool> empty = emptyCols_(s.begin, source->end(), n);
-  std::vector<int> begin, end;
+  std::vector<int> begin;
+
+  std::vector<int> end;
 
   bool in_col = false;
 
@@ -99,8 +101,9 @@ whitespaceColumns(cpp11::list sourceSpec, int n, std::string comment) {
     }
   }
 
-  if (in_col)
+  if (in_col) {
     end.push_back(empty.size());
+  }
 
   using namespace cpp11::literals;
   return cpp11::writable::list(
@@ -115,44 +118,49 @@ TokenizerFwf::TokenizerFwf(
     const std::vector<int>& beginOffset,
     const std::vector<int>& endOffset,
     std::vector<std::string> NA,
-    std::string comment,
+    const std::string& comment,
     bool trimWS,
     bool skipEmptyRows)
     : beginOffset_(beginOffset),
       endOffset_(endOffset),
-      NA_(NA),
+      NA_(std::move(NA)),
       cols_(beginOffset.size()),
       comment_(comment),
       moreTokens_(false),
-      hasComment_(comment.size() > 0),
+      hasComment_(!comment.empty()),
       trimWS_(trimWS),
       skipEmptyRows_(skipEmptyRows) {
-  if (beginOffset_.size() != endOffset_.size())
+  if (beginOffset_.size() != endOffset_.size()) {
     cpp11::stop(
         "Begin (%i) and end (%i) specifications must have equal length",
         beginOffset_.size(),
         endOffset_.size());
+  }
 
-  if (beginOffset_.size() == 0)
+  if (beginOffset_.empty()) {
     cpp11::stop("Zero-length begin and end specifications not supported");
+  }
 
   // File is assumed to be ragged (last column can have variable width)
   // when the last element of endOffset_ is NA
   isRagged_ = endOffset_[endOffset_.size() - 1L] == NA_INTEGER;
 
   max_ = 0;
-  for (int j = 0; j < (cols_ - isRagged_); ++j) {
-    if (endOffset_[j] <= beginOffset_[j])
+  for (int j = 0; j < (cols_ - static_cast<int>(isRagged_)); ++j) {
+    if (endOffset_[j] <= beginOffset_[j]) {
       cpp11::stop(
           "Begin offset (%i) must be smaller than end offset (%i)",
           beginOffset_[j],
           endOffset_[j]);
+    }
 
-    if (beginOffset_[j] < 0)
+    if (beginOffset_[j] < 0) {
       cpp11::stop("Begin offset (%i) must be greater than 0", beginOffset_[j]);
+    }
 
-    if (endOffset_[j] < 0)
+    if (endOffset_[j] < 0) {
       cpp11::stop("End offset (%i) must be greater than 0", endOffset_[j]);
+    }
 
     if (endOffset_[j] > max_) {
       max_ = endOffset_[j];
@@ -178,8 +186,9 @@ std::pair<double, size_t> TokenizerFwf::progress() {
 }
 
 Token TokenizerFwf::nextToken() {
-  if (!moreTokens_)
-    return Token(TOKEN_EOF, 0, 0);
+  if (!moreTokens_) {
+    return {TOKEN_EOF, 0, 0};
+  }
 
   // Check for comments only at start of line
   while (cur_ != end_ && col_ == 0 &&
@@ -203,8 +212,9 @@ findBeginning:
     fieldBegin += skip;
   } else if (skip > 0) { // skipped columns case
     for (int i = 0; i < skip; ++i) {
-      if (fieldBegin == end_)
+      if (fieldBegin == end_) {
         break;
+      }
 
       if (*fieldBegin == '\n' || *fieldBegin == '\r') {
         std::stringstream ss1;
@@ -217,8 +227,9 @@ findBeginning:
         col_ = 0;
 
         advanceForLF(&fieldBegin, end_);
-        if (fieldBegin != end_)
+        if (fieldBegin != end_) {
           fieldBegin++;
+        }
         cur_ = curLine_ = fieldBegin;
         goto findBeginning;
       }
@@ -229,18 +240,23 @@ findBeginning:
   if (fieldBegin == end_) {
     // need to warn here if col != 0/cols - 1
     moreTokens_ = false;
-    return Token(TOKEN_EOF, 0, 0);
+    return {TOKEN_EOF, 0, 0};
   }
 
   // Find end of field
   SourceIterator fieldEnd = fieldBegin;
-  bool lastCol = (col_ == cols_ - 1), tooShort = false, hasNull = false;
+  bool lastCol = (col_ == cols_ - 1);
+
+  bool tooShort = false;
+
+  bool hasNull = false;
 
   if (lastCol && isRagged_) {
     // Last column is ragged, so read until end of line (ignoring width)
     while (fieldEnd != end_ && *fieldEnd != '\r' && *fieldEnd != '\n') {
-      if (*fieldEnd == '\0')
+      if (*fieldEnd == '\0') {
         hasNull = true;
+      }
       fieldEnd++;
     }
   } else {
@@ -259,8 +275,9 @@ findBeginning:
         tooShort = true;
         break;
       }
-      if (*fieldEnd == '\0')
+      if (*fieldEnd == '\0') {
         hasNull = true;
+      }
 
       fieldEnd++;
     }
@@ -276,16 +293,15 @@ findBeginning:
       // Proceed to the end of the line when you are possibly not there.
       // This is needed in case the last column in the file is not being read.
       while (fieldEnd != end_ && *fieldEnd != '\r' && *fieldEnd != '\n') {
-        if (*fieldEnd == '\0')
-          hasNull = true;
         fieldEnd++;
       }
     }
 
     curLine_ = fieldEnd;
     advanceForLF(&curLine_, end_);
-    if (curLine_ != end_)
+    if (curLine_ != end_) {
       curLine_++;
+    }
     cur_ = curLine_;
   } else {
     col_++;
@@ -297,8 +313,9 @@ findBeginning:
 
 Token TokenizerFwf::fieldToken(
     SourceIterator begin, SourceIterator end, bool hasNull) {
-  if (begin == end)
-    return Token(TOKEN_MISSING, row_, col_);
+  if (begin == end) {
+    return {TOKEN_MISSING, row_, col_};
+  }
 
   Token t = Token(begin, end, row_, col_, hasNull);
   if (trimWS_) {
@@ -310,11 +327,11 @@ Token TokenizerFwf::fieldToken(
 }
 
 bool TokenizerFwf::isComment(const char* cur) const {
-  if (!hasComment_)
+  if (!hasComment_) {
     return false;
+  }
 
-  boost::iterator_range<const char*> haystack(cur, end_);
-  return boost::starts_with(haystack, comment_);
+  return starts_with_comment(cur, end_, comment_);
 }
 
 bool TokenizerFwf::isEmpty() const {

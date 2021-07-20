@@ -2,24 +2,9 @@
 % Please edit documentation in R/read_table.R
 \name{read_table}
 \alias{read_table}
-\alias{read_table2}
 \title{Read whitespace-separated columns into a tibble}
 \usage{
 read_table(
-  file,
-  col_names = TRUE,
-  col_types = NULL,
-  locale = default_locale(),
-  na = "NA",
-  skip = 0,
-  n_max = Inf,
-  guess_max = min(n_max, 1000),
-  progress = show_progress(),
-  comment = "",
-  skip_empty_rows = TRUE
-)
-
-read_table2(
   file,
   col_names = TRUE,
   col_types = NULL,
@@ -62,16 +47,18 @@ the first row of the output data frame.
 
 Missing (\code{NA}) column names will generate a warning, and be filled
 in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
-will generate a warning and be made unique with a numeric suffix.}
+will generate a warning and be made unique, see \code{name_repair} to control
+how this is done.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
 a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
-imputation fails, you'll need to supply the correct types yourself.
+imputation fails, you'll need to increase the \code{guess_max} or supply the
+correct types yourself.
 
-If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
 subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
@@ -92,7 +79,7 @@ character represents one column:
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-use \code{col_types = cols()}.
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
 
 \item{locale}{The locale controls defaults that vary from place to place.
@@ -106,15 +93,14 @@ option to \code{character()} to indicate no missing values.}
 
 \item{skip}{Number of lines to skip before reading data.}
 
-\item{n_max}{Maximum number of records to read.}
+\item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of records to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
@@ -124,18 +110,13 @@ option is \code{TRUE} then blank rows will not be represented at all.  If it is
 \code{FALSE} then they will be represented by \code{NA} values in all the columns.}
 }
 \description{
-\code{read_table()} and \code{read_table2()} are designed to read the type of textual
+\code{read_table()} is designed to read the type of textual
 data where each column is separated by one (or more) columns of space.
 
-\code{read_table2()} is like \code{\link[=read.table]{read.table()}}, it allows any number of whitespace
+\code{read_table()} is like \code{\link[=read.table]{read.table()}}, it allows any number of whitespace
 characters between columns, and the lines can be of different lengths.
 
-\code{read_table()} is more strict, each line must be the same length,
-and each field is in the same position in every line. It first finds empty columns and then
-parses like a fixed width file.
-
-\code{spec_table()} and \code{spec_table2()} return
-the column specifications rather than a data frame.
+\code{spec_table()} returns the column specifications rather than a data frame.
 }
 \examples{
 # One corner from http://www.masseyratings.com/cf/compare.htm

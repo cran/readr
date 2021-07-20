@@ -10,8 +10,10 @@
 \usage{
 read_fwf(
   file,
-  col_positions,
+  col_positions = fwf_empty(file, skip, n = guess_max),
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   comment = "",
@@ -20,6 +22,10 @@ read_fwf(
   n_max = Inf,
   guess_max = min(n_max, 1000),
   progress = show_progress(),
+  name_repair = "unique",
+  num_threads = readr_threads(),
+  show_col_types = should_show_types(),
+  lazy = TRUE,
   skip_empty_rows = TRUE
 )
 
@@ -34,7 +40,7 @@ fwf_empty(
 
 fwf_widths(widths, col_names = NULL)
 
-fwf_positions(start, end, col_names = NULL)
+fwf_positions(start, end = NULL, col_names = NULL)
 
 fwf_cols(...)
 }
@@ -64,9 +70,10 @@ a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
-imputation fails, you'll need to supply the correct types yourself.
+imputation fails, you'll need to increase the \code{guess_max} or supply the
+correct types yourself.
 
-If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
 subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
@@ -87,8 +94,18 @@ character represents one column:
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-use \code{col_types = cols()}.
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
+
+\item{col_select}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to include
+in the results, either by name or by numeric index. Use \code{\link[=c]{c()}} or \code{\link[=list]{list()}}
+to select with more than one expression and \code{\link[tidyselect:language]{?tidyselect::language}} for full
+details on the selection language.}
+
+\item{id}{The name of a column in which to store the file path. This is
+useful when reading multiple input files and there is data in the file
+paths, such as the data collection date. If \code{NULL} (the default) no extra
+column is created.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
 The default locale is US-centric (like R), but you can use
@@ -102,20 +119,50 @@ option to \code{character()} to indicate no missing values.}
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
 
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+\item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
 \item{skip}{Number of lines to skip before reading data.}
 
-\item{n_max}{Maximum number of records to read.}
+\item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of records to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
+
+\item{name_repair}{Treatment of problematic column names:
+\itemize{
+\item \code{"minimal"}: No name repair or checks, beyond basic existence of names
+\item \code{"unique"}: Make sure names are unique and not empty
+\item \code{"check_unique"}: (default value), no name repair, but check they are
+\code{unique}
+\item \code{"universal"}: Make the names \code{unique} and syntactic
+\item a function: apply custom name repair (e.g., \code{.name_repair = make.names}
+for names in the style of base R)
+\item A purrr-style anonymous function, see \code{\link[rlang:as_function]{rlang::as_function()}}
+}
+
+This argument is passed on as \code{repair} to \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}.
+See there for more details on these terms and the strategies used
+to enforce them.}
+
+\item{num_threads}{The number of processing threads to use for initial
+parsing and lazy reading of data.}
+
+\item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
+\code{TRUE} always show the column types, even if they are supplied. If \code{NULL}
+(the default) only show the column types if they are not explicitly supplied
+by the \code{col_types} argument.}
+
+\item{lazy}{Read values lazily? By default the file is initially only
+indexed and the values are read lazily when accessed. Lazy reading is
+useful interactively, particularly if you are only interested in a subset
+of the full dataset. Note, lazy reading on windows will lock the file
+until all the data has been read from it, if you run into this issue set
+\code{lazy = FALSE}.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is
@@ -145,7 +192,19 @@ It's also very fast to parse, because every field is in the same place in
 every line. Unfortunately, it's painful to parse because you need to
 describe the length of every field. Readr aims to make it as easy as possible
 by providing a number of different ways to describe the field structure.
+\itemize{
+\item \code{\link[=fwf_empty]{fwf_empty()}} - Guesses based on the positions of empty columns.
+\item \code{\link[=fwf_widths]{fwf_widths()}} - Supply the widths of the columns.
+\item \code{\link[=fwf_positions]{fwf_positions()}} - Supply paired vectors of start and end positions.
+\item \code{\link[=fwf_cols]{fwf_cols()}} - Supply named arguments of paired start and end positions or column widths.
 }
+}
+\section{Second edition changes}{
+
+Comments are no longer looked for anywhere in the file.
+They are now only ignored at the start of a line.
+}
+
 \examples{
 fwf_sample <- readr_example("fwf-sample.txt")
 writeLines(read_lines(fwf_sample))

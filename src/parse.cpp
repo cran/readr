@@ -2,6 +2,7 @@
 #include "cpp11/integers.hpp"
 #include "cpp11/list.hpp"
 #include "cpp11/sexp.hpp"
+#include <memory>
 
 #include "Collector.h"
 #include "LocaleInfo.h"
@@ -11,19 +12,22 @@
 #include "Warnings.h"
 
 [[cpp11::register]] cpp11::integers
-dim_tokens_(cpp11::list sourceSpec, cpp11::list tokenizerSpec) {
+dim_tokens_(const cpp11::list& sourceSpec, const cpp11::list& tokenizerSpec) {
   SourcePtr source = Source::create(sourceSpec);
   TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
   tokenizer->tokenize(source->begin(), source->end());
 
-  int rows = -1, cols = -1;
+  int rows = -1;
+
+  int cols = -1;
 
   for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF;
        t = tokenizer->nextToken()) {
     rows = t.row();
 
-    if ((int)t.col() > cols)
+    if ((int)t.col() > cols) {
       cols = t.col();
+    }
   }
 
   cpp11::writable::integers out(rows + 1);
@@ -33,8 +37,10 @@ dim_tokens_(cpp11::list sourceSpec, cpp11::list tokenizerSpec) {
   return out;
 }
 
-[[cpp11::register]] std::vector<int>
-count_fields_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
+[[cpp11::register]] std::vector<int> count_fields_(
+    const cpp11::list& sourceSpec,
+    const cpp11::list& tokenizerSpec,
+    int n_max) {
   SourcePtr source = Source::create(sourceSpec);
   TokenizerPtr tokenizer = Tokenizer::create(tokenizerSpec);
   tokenizer->tokenize(source->begin(), source->end());
@@ -43,8 +49,9 @@ count_fields_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
 
   for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF;
        t = tokenizer->nextToken()) {
-    if (n_max > 0 && t.row() >= (size_t)n_max)
+    if (n_max > 0 && t.row() >= (size_t)n_max) {
       break;
+    }
 
     if (t.row() >= fields.size()) {
       fields.resize(t.row() + 1);
@@ -57,7 +64,9 @@ count_fields_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
 }
 
 [[cpp11::register]] cpp11::list guess_header_(
-    cpp11::list sourceSpec, cpp11::list tokenizerSpec, cpp11::list locale_) {
+    const cpp11::list& sourceSpec,
+    const cpp11::list& tokenizerSpec,
+    const cpp11::list& locale_) {
   Warnings warnings;
   LocaleInfo locale(locale_);
   SourcePtr source = Source::create(sourceSpec);
@@ -96,8 +105,10 @@ count_fields_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
       {"header"_nm = out.vector(), "skip"_nm = source->skippedRows() + 1});
 }
 
-[[cpp11::register]] SEXP
-tokenize_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
+[[cpp11::register]] SEXP tokenize_(
+    const cpp11::list& sourceSpec,
+    const cpp11::list& tokenizerSpec,
+    int n_max) {
   Warnings warnings;
 
   SourcePtr source = Source::create(sourceSpec);
@@ -109,16 +120,18 @@ tokenize_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
 
   for (Token t = tokenizer->nextToken(); t.type() != TOKEN_EOF;
        t = tokenizer->nextToken()) {
-    if (n_max > 0 && t.row() >= (size_t)n_max)
+    if (n_max > 0 && t.row() >= (size_t)n_max) {
       break;
+    }
 
     if (t.row() >= rows.size()) {
       rows.resize(t.row() + 1);
     }
 
     std::vector<std::string>& row = rows[t.row()];
-    if (t.col() >= row.size())
+    if (t.col() >= row.size()) {
       row.resize(t.col() + 1);
+    }
 
     row[t.col()] = t.asString();
   }
@@ -127,24 +140,25 @@ tokenize_(cpp11::list sourceSpec, cpp11::list tokenizerSpec, int n_max) {
   out.reserve(rows.size());
 
   for (auto&& row : rows) {
-    out.push_back(cpp11::as_sexp(row));
+    cpp11::sexp row_data(cpp11::as_sexp(row));
+    out.push_back(row_data);
   }
 
   return warnings.addAsAttribute(out);
 }
 
 [[cpp11::register]] SEXP parse_vector_(
-    cpp11::strings x,
-    cpp11::list collectorSpec,
-    cpp11::list locale_,
+    const cpp11::strings& x,
+    const cpp11::list& collectorSpec,
+    const cpp11::list& locale_,
     const std::vector<std::string>& na,
-    const bool trim_ws) {
+    bool trim_ws) {
   Warnings warnings;
   int n = x.size();
 
   LocaleInfo locale(locale_);
 
-  boost::shared_ptr<Collector> col = Collector::create(collectorSpec, &locale);
+  std::shared_ptr<Collector> col(Collector::create(collectorSpec, &locale));
   col->setWarnings(&warnings);
   col->resize(n);
 

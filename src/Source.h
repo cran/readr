@@ -4,10 +4,10 @@
 #include "cpp11/list.hpp"
 #include "utils.h"
 
-#include "boost.h"
+#include <memory>
 
 class Source;
-typedef boost::shared_ptr<Source> SourcePtr;
+typedef std::shared_ptr<Source> SourcePtr;
 
 class Source {
 public:
@@ -25,22 +25,21 @@ public:
       const std::string& comment = "",
       bool skipQuote = true);
 
-  const char*
+  static const char*
   skipLine(const char* begin, const char* end, bool isComment, bool skipQuote);
 
-  const char* skipDoubleQuoted(const char* begin, const char* end);
+  static const char* skipDoubleQuoted(const char* begin, const char* end);
 
   size_t skippedRows() { return skippedRows_; }
 
   static const char* skipBom(const char* begin, const char* end);
 
-  static SourcePtr create(cpp11::list spec);
+  static SourcePtr create(const cpp11::list& spec);
 
 private:
   static bool
   inComment(const char* cur, const char* end, const std::string& comment) {
-    boost::iterator_range<const char*> haystack(cur, end);
-    return boost::starts_with(haystack, comment);
+    return starts_with_comment(cur, end, comment);
   }
 
   size_t skippedRows_;

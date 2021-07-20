@@ -109,6 +109,7 @@ test_that("read_delim_chunked", {
 test_that("DataFrameCallback works as intended", {
   f <- readr_example("mtcars.csv")
   out0 <- subset(read_csv(f), gear == 3)
+  attr(out0, "problems") <- NULL
   fun3 <- DataFrameCallback$new(function(x, pos) subset(x, gear == 3))
 
   out1 <- read_csv_chunked(f, fun3)
@@ -125,6 +126,7 @@ test_that("DataFrameCallback works as intended", {
 
   # No matching rows
   out0 <- subset(read_csv(f), gear == 5)
+  attr(out0, "problems") <- NULL
 
   fun5 <- DataFrameCallback$new(function(x, pos) subset(x, gear == 5))
 
@@ -155,11 +157,11 @@ test_that("AccumulateCallback works as intended", {
   f <- readr_example("mtcars.csv")
   out0 <- read_csv(f)
 
-  min_chunks <- function(x, pos, acc){
-    f <- function(x){
+  min_chunks <- function(x, pos, acc) {
+    f <- function(x) {
       x[order(x$wt), ][1, ]
     }
-    if(is.null(acc)){
+    if (is.null(acc)) {
       acc <- data.frame()
     }
     f(rbind(x, acc))
@@ -169,7 +171,7 @@ test_that("AccumulateCallback works as intended", {
   out1 <- read_csv_chunked(f, fun1, chunk_size = 10)
   expect_equal(min_chunks(out0, acc = NULL), out1)
 
-  sum_chunks <- function(x, pos, acc){
+  sum_chunks <- function(x, pos, acc) {
     sum(x$wt) + acc
   }
 
@@ -181,5 +183,12 @@ test_that("AccumulateCallback works as intended", {
     AccumulateCallback$new(function(x, i) x),
     "`callback` must have three or more arguments"
   )
+})
 
+test_that("Chunks include their spec (#1143)", {
+  res <- read_csv_chunked(readr_example("mtcars.csv"),
+      callback = ListCallback$new(function(x, pos) spec(x)),
+      chunk_size = 20)
+
+  expect_equal(res[[1]]$cols, spec_csv(readr_example("mtcars.csv"))$cols)
 })

@@ -35,7 +35,7 @@ The default locale is US-centric (like R), but you can use
 the default time zone, encoding, decimal mark, big mark, and day/month
 names.}
 
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+\item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
 \item{guess_integer}{If \code{TRUE}, guess integer types for whole numbers, if
@@ -53,8 +53,8 @@ if needed.
 parse_guess(c("FALSE", "TRUE", "F", "T"))
 
 # Integers and doubles
-parse_guess(c("1","2","3"))
-parse_guess(c("1.6","2.6","3.4"))
+parse_guess(c("1", "2", "3"))
+parse_guess(c("1.6", "2.6", "3.4"))
 
 # Numbers containing grouping mark
 guess_parser("1,234,566")

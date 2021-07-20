@@ -1,14 +1,17 @@
 # nocov start
 .onLoad <- function(libname, pkgname) {
+  tzdb::tzdb_initialize()
+
   register_s3_method("testthat", "compare", "col_spec")
   register_s3_method("testthat", "compare", "tbl_df")
+  register_s3_method("waldo", "compare_proxy", "spec_tbl_df")
 
   opt <- options()
   opt_readr <- list(
     readr.show_progress = TRUE
   )
   to_set <- !(names(opt_readr) %in% names(opt))
-  if(any(to_set)) options(opt_readr[to_set])
+  if (any(to_set)) options(opt_readr[to_set])
   invisible()
 }
 

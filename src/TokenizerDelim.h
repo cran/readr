@@ -36,7 +36,7 @@ public:
       char delim = ',',
       char quote = '"',
       std::vector<std::string> NA = std::vector<std::string>(1, "NA"),
-      std::string comment = "",
+      const std::string& comment = "",
       bool trimWS = true,
       bool escapeBackslash = false,
       bool escapeDouble = true,
@@ -49,8 +49,7 @@ public:
 
   Token nextToken();
 
-  void unescape(
-      SourceIterator begin, SourceIterator end, boost::container::string* pOut);
+  void unescape(SourceIterator begin, SourceIterator end, std::string* pOut);
 
 private:
   bool isComment(const char* cur) const;
@@ -59,7 +58,7 @@ private:
 
   void newRecord();
 
-  Token emptyToken(int row, int col);
+  Token emptyToken(int row, int col) const;
 
   Token fieldToken(
       SourceIterator begin,
@@ -79,9 +78,9 @@ private:
       int col);
 
   void unescapeBackslash(
-      SourceIterator begin, SourceIterator end, boost::container::string* pOut);
+      SourceIterator begin, SourceIterator end, std::string* pOut);
 
-  void unescapeDouble(
-      SourceIterator begin, SourceIterator end, boost::container::string* pOut);
+  void
+  unescapeDouble(SourceIterator begin, SourceIterator end, std::string* pOut) const;
 };
 #endif

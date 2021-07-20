@@ -1,11 +1,14 @@
 #include "TokenizerDelim.h"
+
+#include <utility>
+
 #include "cpp11/protect.hpp"
 
 TokenizerDelim::TokenizerDelim(
     char delim,
     char quote,
     std::vector<std::string> NA,
-    std::string comment,
+    const std::string& comment,
     bool trimWS,
     bool escapeBackslash,
     bool escapeDouble,
@@ -13,9 +16,9 @@ TokenizerDelim::TokenizerDelim(
     bool skipEmptyRows)
     : delim_(delim),
       quote_(quote),
-      NA_(NA),
+      NA_(std::move(NA)),
       comment_(comment),
-      hasComment_(comment.size() > 0),
+      hasComment_(!comment.empty()),
       trimWS_(trimWS),
       escapeBackslash_(escapeBackslash),
       escapeDouble_(escapeDouble),
@@ -23,8 +26,8 @@ TokenizerDelim::TokenizerDelim(
       hasEmptyNA_(false),
       moreTokens_(false),
       skipEmptyRows_(skipEmptyRows) {
-  for (size_t i = 0; i < NA_.size(); ++i) {
-    if (NA_[i] == "") {
+  for (auto& i : NA_) {
+    if (i.empty()) {
       hasEmptyNA_ = true;
       break;
     }
@@ -50,24 +53,33 @@ std::pair<double, size_t> TokenizerDelim::progress() {
 
 Token TokenizerDelim::nextToken() {
   // Capture current position
-  int row = row_, col = col_;
+  int row = row_;
 
-  if (!moreTokens_)
-    return Token(TOKEN_EOF, row, col);
+  int col = col_;
+
+  if (!moreTokens_) {
+    return {TOKEN_EOF, row, col};
+  }
 
   SourceIterator token_begin = cur_;
-  bool hasEscapeD = false, hasEscapeB = false, hasNull = false;
+  bool hasEscapeD = false;
+
+  bool hasEscapeB = false;
+
+  bool hasNull = false;
 
   while (cur_ < end_) {
     // Increments cur on destruct, ensuring that we always move on to the
     // next character
     Advance advance(&cur_);
 
-    if (*cur_ == '\0')
+    if (*cur_ == '\0') {
       hasNull = true;
+    }
 
-    if ((end_ - cur_) % 131072 == 0)
+    if ((end_ - cur_) % 131072 == 0) {
       cpp11::check_user_interrupt();
+    }
 
     switch (state_) {
     case STATE_DELIM: {
@@ -82,17 +94,29 @@ Token TokenizerDelim::nextToken() {
         }
         newRecord();
         return emptyToken(row, col);
-      } else if (isComment(cur_)) {
+      }
+      if (isComment(cur_)) {
+
         state_ = STATE_COMMENT;
+
       } else if (*cur_ == delim_) {
+
         newField();
+
         return emptyToken(row, col);
+
       } else if (*cur_ == quote_) {
+
         token_begin = cur_;
+
         state_ = STATE_STRING;
+
       } else if (escapeBackslash_ && *cur_ == '\\') {
+
         state_ = STATE_ESCAPE_F;
+
       } else {
+
         state_ = STATE_FIELD;
       }
       break;
@@ -244,7 +268,7 @@ Token TokenizerDelim::nextToken() {
   switch (state_) {
   case STATE_DELIM:
     if (col_ == 0) {
-      return Token(TOKEN_EOF, row, col);
+      return {TOKEN_EOF, row, col};
     } else {
       return emptyToken(row, col);
     }
@@ -269,18 +293,18 @@ Token TokenizerDelim::nextToken() {
     return fieldToken(token_begin, end_, hasEscapeB, hasNull, row, col);
 
   case STATE_COMMENT:
-    return Token(TOKEN_EOF, row, col);
+    return {TOKEN_EOF, row, col};
   }
 
-  return Token(TOKEN_EOF, row, col);
+  return {TOKEN_EOF, row, col};
 }
 
 bool TokenizerDelim::isComment(const char* cur) const {
-  if (!hasComment_)
+  if (!hasComment_) {
     return false;
+  }
 
-  boost::iterator_range<const char*> haystack(cur, end_);
-  return boost::starts_with(haystack, comment_);
+  return starts_with_comment(cur, end_, comment_);
 }
 
 void TokenizerDelim::newField() {
@@ -294,8 +318,8 @@ void TokenizerDelim::newRecord() {
   state_ = STATE_DELIM;
 }
 
-Token TokenizerDelim::emptyToken(int row, int col) {
-  return Token(hasEmptyNA_ ? TOKEN_MISSING : TOKEN_EMPTY, row, col);
+Token TokenizerDelim::emptyToken(int row, int col) const {
+  return {hasEmptyNA_ ? TOKEN_MISSING : TOKEN_EMPTY, row, col};
 }
 
 Token TokenizerDelim::fieldToken(
@@ -305,9 +329,10 @@ Token TokenizerDelim::fieldToken(
     bool hasNull,
     int row,
     int col) {
-  Token t(begin, end, row, col, hasNull, (hasEscapeB) ? this : NULL);
-  if (trimWS_)
+  Token t(begin, end, row, col, hasNull, (hasEscapeB) ? this : nullptr);
+  if (trimWS_) {
     t.trim();
+  }
   t.flagNA(NA_);
   return t;
 }
@@ -321,16 +346,23 @@ Token TokenizerDelim::stringToken(
     int row,
     int col) {
   Token t(
-      begin, end, row, col, hasNull, (hasEscapeD || hasEscapeB) ? this : NULL);
-  if (trimWS_)
+      begin,
+      end,
+      row,
+      col,
+      hasNull,
+      (hasEscapeD || hasEscapeB) ? this : nullptr);
+  if (trimWS_) {
     t.trim();
-  if (quotedNA_)
+  }
+  if (quotedNA_) {
     t.flagNA(NA_);
+  }
   return t;
 }
 
 void TokenizerDelim::unescape(
-    SourceIterator begin, SourceIterator end, boost::container::string* pOut) {
+    SourceIterator begin, SourceIterator end, std::string* pOut) {
   if (escapeDouble_ && !escapeBackslash_) {
     unescapeDouble(begin, end, pOut);
   } else if (escapeBackslash_ && !escapeDouble_) {
@@ -341,7 +373,7 @@ void TokenizerDelim::unescape(
 }
 
 void TokenizerDelim::unescapeDouble(
-    SourceIterator begin, SourceIterator end, boost::container::string* pOut) {
+    SourceIterator begin, SourceIterator end, std::string* pOut) const {
   pOut->reserve(end - begin);
 
   bool inEscape = false;
@@ -360,7 +392,7 @@ void TokenizerDelim::unescapeDouble(
 }
 
 void TokenizerDelim::unescapeBackslash(
-    SourceIterator begin, SourceIterator end, boost::container::string* pOut) {
+    SourceIterator begin, SourceIterator end, std::string* pOut) {
   pOut->reserve(end - begin);
 
   bool inEscape = false;

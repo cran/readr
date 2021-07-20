@@ -6,7 +6,7 @@
 #include "SourceRaw.h"
 #include "SourceString.h"
 
-SourcePtr Source::create(cpp11::list spec) {
+SourcePtr Source::create(const cpp11::list& spec) {
   std::string subclass(cpp11::as_cpp<cpp11::strings>(spec.attr("class"))[0]);
 
   int skip = cpp11::as_cpp<int>(spec["skip"]);
@@ -17,13 +17,16 @@ SourcePtr Source::create(cpp11::list spec) {
   if (subclass == "source_raw") {
     return SourcePtr(
         new SourceRaw(spec[0], skip, skipEmptyRows, comment, skipQuote));
-  } else if (subclass == "source_string") {
+  }
+
+  if (subclass == "source_string") {
     return SourcePtr(
         new SourceString(spec[0], skip, skipEmptyRows, comment, skipQuote));
-  } else if (subclass == "source_file") {
+  }
+
+  if (subclass == "source_file") {
     cpp11::strings path(spec[0]);
-    return SourcePtr(new SourceFile(
-        Rf_translateChar(path[0]), skip, skipEmptyRows, comment, skipQuote));
+    return SourcePtr(new SourceFile(Rf_translateCharUTF8(path[0]), skip, skipEmptyRows, comment, skipQuote));
   }
 
   cpp11::stop("Unknown source type");
@@ -37,8 +40,8 @@ const char* Source::skipLines(
     bool skipEmptyRows,
     const std::string& comment,
     bool skipQuote) {
-  bool hasComment = comment != "";
-  bool isComment;
+  bool hasComment = !comment.empty();
+  bool isComment = false;
 
   const char* cur = begin;
 

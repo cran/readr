@@ -11,13 +11,14 @@
 // --------------------------------------------------------------------
 
 #include <cctype>
+#include <utility>
 
 TokenizerWs::TokenizerWs(
-    std::vector<std::string> NA, std::string comment, bool skipEmptyRows)
-    : NA_(NA),
+    std::vector<std::string> NA, const std::string& comment, bool skipEmptyRows)
+    : NA_(std::move(NA)),
       comment_(comment),
       moreTokens_(false),
-      hasComment_(comment.size() > 0),
+      hasComment_(!comment.empty()),
       skipEmptyRows_(skipEmptyRows) {}
 
 void TokenizerWs::tokenize(SourceIterator begin, SourceIterator end) {
@@ -44,12 +45,13 @@ Token TokenizerWs::nextToken() {
     ignoreLine();
   }
 
-  if (cur_ == end_)
-    return Token(TOKEN_EOF, 0, 0);
+  if (cur_ == end_) {
+    return {TOKEN_EOF, 0, 0};
+  }
 
   // Find start of field
   SourceIterator fieldBegin = cur_;
-  while (fieldBegin != end_ && isblank(*fieldBegin)) {
+  while (fieldBegin != end_ && (isblank(*fieldBegin) != 0)) {
     ++fieldBegin;
   }
 
@@ -62,10 +64,10 @@ Token TokenizerWs::nextToken() {
   }
 
   SourceIterator fieldEnd = fieldBegin;
-  while (fieldEnd != end_ && !isspace(*fieldEnd)) {
+  while (fieldEnd != end_ && (isspace(*fieldEnd) == 0)) {
     ++fieldEnd;
   }
-  bool hasNull = *fieldEnd == '\0';
+  bool hasNull = fieldEnd != end_ && *fieldEnd == '\0';
   Token t = fieldToken(fieldBegin, fieldEnd, hasNull);
   cur_ = fieldEnd;
   ++col_;
@@ -80,8 +82,9 @@ Token TokenizerWs::nextToken() {
 
 Token TokenizerWs::fieldToken(
     SourceIterator begin, SourceIterator end, bool hasNull) {
-  if (begin == end)
-    return Token(TOKEN_MISSING, row_, col_);
+  if (begin == end) {
+    return {TOKEN_MISSING, row_, col_};
+  }
 
   Token t = Token(begin, end, row_, col_, hasNull);
   t.trim();
@@ -89,12 +92,13 @@ Token TokenizerWs::fieldToken(
 
   return t;
 }
-bool TokenizerWs::isComment(const char* cur) const {
-  if (!hasComment_)
-    return false;
 
-  boost::iterator_range<const char*> haystack(cur, end_);
-  return boost::starts_with(haystack, comment_);
+bool TokenizerWs::isComment(const char* cur) const {
+  if (!hasComment_) {
+    return false;
+  }
+
+  return starts_with_comment(cur, end_, comment_);
 }
 
 bool TokenizerWs::isEmpty() const {

@@ -75,7 +75,8 @@ datasource <- function(file, skip = 0, skip_empty_rows = FALSE, comment = "", sk
 
 new_datasource <- function(type, x, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE, ...) {
   structure(list(x, skip = skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote, ...),
-    class = c(paste0("source_", type), "source"))
+    class = c(paste0("source_", type), "source")
+  )
 }
 
 datasource_string <- function(text, skip, skip_empty_rows = TRUE, comment = "", skip_quote = TRUE) {
@@ -115,15 +116,17 @@ read_connection <- function(con, chunk_size = 64L * 1024L) {
 }
 
 standardise_path <- function(path, input = TRUE) {
-  if (!is.character(path))
+  if (!is.character(path)) {
     return(path)
+  }
 
   if (length(path) > 1) {
     return(paste(path, collapse = "\n"))
   }
 
-  if (grepl("\n", path))
+  if (grepl("\n", path)) {
     return(path)
+  }
 
   if (is_url(path)) {
     if (requireNamespace("curl", quietly = TRUE)) {
@@ -139,7 +142,9 @@ standardise_path <- function(path, input = TRUE) {
         xz = {
           close(con)
           stop("Reading from remote `", ext, "` compressed files is not supported,\n",
-            "  download the files locally first.", call. = FALSE)
+            "  download the files locally first.",
+            call. = FALSE
+          )
         },
         gz = gzcon(con),
         con
@@ -158,13 +163,17 @@ standardise_path <- function(path, input = TRUE) {
     bz2 = bzfile(path, ""),
     xz = xzfile(path, ""),
     zip = zipfile(path, ""),
+    {
+      path <- normalizePath(path, mustWork = FALSE)
 
-    # Use a file connection for output
-    if (!isTRUE(input)) {
-      file(path, "")
-    } else {
-      path
-    })
+      # Use a file connection for output
+      if (!isTRUE(input)) {
+        file(path, "")
+      } else {
+        enc2utf8(path)
+      }
+    }
+  )
 }
 
 source_name <- function(x) {
@@ -188,12 +197,14 @@ is_url <- function(path) {
 }
 
 check_path <- function(path) {
-  if (file.exists(path))
+  if (file.exists(path)) {
     return(normalizePath(path, "/", mustWork = FALSE))
+  }
 
   stop("'", path, "' does not exist",
-    if (!is_absolute_path(path))
-      paste0(" in current working directory ('", getwd(), "')"),
+    if (!is_absolute_path(path)) {
+      paste0(" in current working directory ('", getwd(), "')")
+    },
     ".",
     call. = FALSE
   )
@@ -224,7 +235,10 @@ empty_file <- function(x) {
 #' @seealso read_delim
 #' @export
 clipboard <- function() {
-  clipr::read_clip()
+  if (edition_first()) {
+    return(clipr::read_clip())
+  }
+  I(paste0(clipr::read_clip(), collapse = "\n"))
 }
 
 detect_compression <- function(path) {

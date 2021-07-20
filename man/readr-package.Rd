@@ -23,7 +23,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Jim Hester \email{james.hester@rstudio.com}
+\strong{Maintainer}: Jim Hester \email{jim.hester@rstudio.com}
 
 Authors:
 \itemize{
@@ -33,8 +33,8 @@ Authors:
 Other contributors:
 \itemize{
   \item Romain Francois [contributor]
-  \item R Core Team (Date time code adapted from R) [contributor]
   \item RStudio [copyright holder, funder]
+  \item https://github.com/mandreyel/ (mio library) [copyright holder]
   \item Jukka Jylänki (grisu3 implementation) [contributor, copyright holder]
   \item Mikkel Jørgensen (grisu3 implementation) [contributor, copyright holder]
 }

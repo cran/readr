@@ -1,15 +1,15 @@
-#include "cpp11/strings.hpp"
 #include "cpp11/list.hpp"
 #include "cpp11/sexp.hpp"
+#include "cpp11/strings.hpp"
 
 #include "Collector.h"
 #include "LocaleInfo.h"
 #include "Token.h"
 
 [[cpp11::register]] cpp11::sexp type_convert_col(
-    cpp11::strings x,
-    cpp11::list spec,
-    cpp11::list locale_,
+    const cpp11::strings& x,
+    const cpp11::list& spec,
+    const cpp11::list& locale_,
     int col,
     const std::vector<std::string>& na,
     bool trim_ws) {
@@ -27,8 +27,9 @@
     } else {
       const char* begin = CHAR(string);
       t = Token(begin, begin + Rf_length(string), i - 1, col - 1, false);
-      if (trim_ws)
+      if (trim_ws) {
         t.trim();
+      }
       t.flagNA(na);
     }
 

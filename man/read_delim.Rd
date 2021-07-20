@@ -5,16 +5,18 @@
 \alias{read_csv}
 \alias{read_csv2}
 \alias{read_tsv}
-\title{Read a delimited file (including csv & tsv) into a tibble}
+\title{Read a delimited file (including CSV and TSV) into a tibble}
 \usage{
 read_delim(
   file,
-  delim,
+  delim = NULL,
   quote = "\\"",
   escape_backslash = FALSE,
   escape_double = TRUE,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -23,14 +25,20 @@ read_delim(
   skip = 0,
   n_max = Inf,
   guess_max = min(1000, n_max),
+  name_repair = "unique",
+  num_threads = readr_threads(),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 read_csv(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -40,14 +48,20 @@ read_csv(
   skip = 0,
   n_max = Inf,
   guess_max = min(1000, n_max),
+  name_repair = "unique",
+  num_threads = readr_threads(),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 read_csv2(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -58,13 +72,19 @@ read_csv2(
   n_max = Inf,
   guess_max = min(1000, n_max),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  name_repair = "unique",
+  num_threads = readr_threads(),
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 read_tsv(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -75,7 +95,11 @@ read_tsv(
   n_max = Inf,
   guess_max = min(1000, n_max),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  name_repair = "unique",
+  num_threads = readr_threads(),
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 }
 \arguments{
@@ -120,16 +144,18 @@ the first row of the output data frame.
 
 Missing (\code{NA}) column names will generate a warning, and be filled
 in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
-will generate a warning and be made unique with a numeric suffix.}
+will generate a warning and be made unique, see \code{name_repair} to control
+how this is done.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
 a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
-imputation fails, you'll need to supply the correct types yourself.
+imputation fails, you'll need to increase the \code{guess_max} or supply the
+correct types yourself.
 
-If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
 subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
@@ -150,8 +176,18 @@ character represents one column:
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-use \code{col_types = cols()}.
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
+
+\item{col_select}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to include
+in the results, either by name or by numeric index. Use \code{\link[=c]{c()}} or \code{\link[=list]{list()}}
+to select with more than one expression and \code{\link[tidyselect:language]{?tidyselect::language}} for full
+details on the selection language.}
+
+\item{id}{The name of a column in which to store the file path. This is
+useful when reading multiple input files and there is data in the file
+paths, such as the data collection date. If \code{NULL} (the default) no extra
+column is created.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
 The default locale is US-centric (like R), but you can use
@@ -168,35 +204,66 @@ values (the default) or strings.}
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
 
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+\item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
-\item{skip}{Number of lines to skip before reading data.}
+\item{skip}{Number of lines to skip before reading data. If \code{comment} is
+supplied any commented lines are ignored \emph{after} skipping.}
 
-\item{n_max}{Maximum number of records to read.}
+\item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of records to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.}
+
+\item{name_repair}{Treatment of problematic column names:
+\itemize{
+\item \code{"minimal"}: No name repair or checks, beyond basic existence of names
+\item \code{"unique"}: Make sure names are unique and not empty
+\item \code{"check_unique"}: (default value), no name repair, but check they are
+\code{unique}
+\item \code{"universal"}: Make the names \code{unique} and syntactic
+\item a function: apply custom name repair (e.g., \code{.name_repair = make.names}
+for names in the style of base R)
+\item A purrr-style anonymous function, see \code{\link[rlang:as_function]{rlang::as_function()}}
+}
+
+This argument is passed on as \code{repair} to \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}.
+See there for more details on these terms and the strategies used
+to enforce them.}
+
+\item{num_threads}{The number of processing threads to use for initial
+parsing and lazy reading of data.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
+
+\item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
+\code{TRUE} always show the column types, even if they are supplied. If \code{NULL}
+(the default) only show the column types if they are not explicitly supplied
+by the \code{col_types} argument.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is
 \code{FALSE} then they will be represented by \code{NA} values in all the columns.}
+
+\item{lazy}{Read values lazily? By default the file is initially only
+indexed and the values are read lazily when accessed. Lazy reading is
+useful interactively, particularly if you are only interested in a subset
+of the full dataset. Note, lazy reading on windows will lock the file
+until all the data has been read from it, if you run into this issue set
+\code{lazy = FALSE}.}
 }
 \value{
-A \code{\link[=tibble]{tibble()}}. If there are parsing problems, a warning tells you
-how many, and you can retrieve the details with \code{\link[=problems]{problems()}}.
+A \code{\link[=tibble]{tibble()}}. If there are parsing problems, a warning will alert you.
+You can retrieve the full details by calling \code{\link[=problems]{problems()}} on your dataset.
 }
 \description{
-\code{read_csv()} and \code{read_tsv()} are special cases of the general
+\code{read_csv()} and \code{read_tsv()} are special cases of the more general
 \code{read_delim()}. They're useful for reading the most common types of
 flat file data, comma separated values and tab separated values,
 respectively. \code{read_csv2()} uses \verb{;} for the field separator and \verb{,} for the
-decimal point. This is common in some European countries.
+decimal point. This format is common in some European countries.
 }
 \examples{
 # Input sources -------------------------------------------------------------
@@ -204,32 +271,31 @@ decimal point. This is common in some European countries.
 read_csv(readr_example("mtcars.csv"))
 read_csv(readr_example("mtcars.csv.zip"))
 read_csv(readr_example("mtcars.csv.bz2"))
-
 \dontrun{
 # Including remote paths
 read_csv("https://github.com/tidyverse/readr/raw/master/inst/extdata/mtcars.csv")
 }
 
-# Or directly from a string (must contain a newline)
-read_csv("x,y\n1,2\n3,4")
+# Or directly from a string with `I()`
+read_csv(I("x,y\n1,2\n3,4"))
 
 # Column types --------------------------------------------------------------
 # By default, readr guesses the columns types, looking at the first 1000 rows.
 # You can override with a compact specification:
-read_csv("x,y\n1,2\n3,4", col_types = "dc")
+read_csv(I("x,y\n1,2\n3,4"), col_types = "dc")
 
 # Or with a list of column types:
-read_csv("x,y\n1,2\n3,4", col_types = list(col_double(), col_character()))
+read_csv(I("x,y\n1,2\n3,4"), col_types = list(col_double(), col_character()))
 
 # If there are parsing problems, you get a warning, and can extract
 # more details with problems()
-y <- read_csv("x\n1\n2\nb", col_types = list(col_double()))
+y <- read_csv(I("x\n1\n2\nb"), col_types = list(col_double()))
 y
 problems(y)
 
 # File types ----------------------------------------------------------------
-read_csv("a,b\n1.0,2.0")
-read_csv2("a;b\n1,0;2,0")
-read_tsv("a\tb\n1.0\t2.0")
-read_delim("a|b\n1.0|2.0", delim = "|")
+read_csv(I("a,b\n1.0,2.0"))
+read_csv2(I("a;b\n1,0;2,0"))
+read_tsv(I("a\tb\n1.0\t2.0"))
+read_delim(I("a|b\n1.0|2.0"), delim = "|")
 }

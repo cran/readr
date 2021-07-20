@@ -10,8 +10,8 @@
 read_delim_chunked(
   file,
   callback,
+  delim = NULL,
   chunk_size = 10000,
-  delim,
   quote = "\\"",
   escape_backslash = FALSE,
   escape_double = TRUE,
@@ -23,7 +23,7 @@ read_delim_chunked(
   comment = "",
   trim_ws = FALSE,
   skip = 0,
-  guess_max = min(1000, chunk_size),
+  guess_max = chunk_size,
   progress = show_progress(),
   skip_empty_rows = TRUE
 )
@@ -41,7 +41,7 @@ read_csv_chunked(
   comment = "",
   trim_ws = TRUE,
   skip = 0,
-  guess_max = min(1000, chunk_size),
+  guess_max = chunk_size,
   progress = show_progress(),
   skip_empty_rows = TRUE
 )
@@ -59,7 +59,7 @@ read_csv2_chunked(
   comment = "",
   trim_ws = TRUE,
   skip = 0,
-  guess_max = min(1000, chunk_size),
+  guess_max = chunk_size,
   progress = show_progress(),
   skip_empty_rows = TRUE
 )
@@ -77,7 +77,7 @@ read_tsv_chunked(
   comment = "",
   trim_ws = TRUE,
   skip = 0,
-  guess_max = min(1000, chunk_size),
+  guess_max = chunk_size,
   progress = show_progress(),
   skip_empty_rows = TRUE
 )
@@ -100,9 +100,9 @@ Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system
 
 \item{callback}{A callback function to call on each chunk}
 
-\item{chunk_size}{The number of rows to include in each chunk}
-
 \item{delim}{Single character used to separate fields within a record.}
+
+\item{chunk_size}{The number of rows to include in each chunk}
 
 \item{quote}{Single character used to quote strings.}
 
@@ -128,16 +128,18 @@ the first row of the output data frame.
 
 Missing (\code{NA}) column names will generate a warning, and be filled
 in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
-will generate a warning and be made unique with a numeric suffix.}
+will generate a warning and be made unique, see \code{name_repair} to control
+how this is done.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
 a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
-imputation fails, you'll need to supply the correct types yourself.
+imputation fails, you'll need to increase the \code{guess_max} or supply the
+correct types yourself.
 
-If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
 subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
@@ -158,7 +160,7 @@ character represents one column:
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-use \code{col_types = cols()}.
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
 
 \item{locale}{The locale controls defaults that vary from place to place.
@@ -176,18 +178,18 @@ values (the default) or strings.}
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
 
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+\item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
-\item{skip}{Number of lines to skip before reading data.}
+\item{skip}{Number of lines to skip before reading data. If \code{comment} is
+supplied any commented lines are ignored \emph{after} skipping.}
 
-\item{guess_max}{Maximum number of records to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is
@@ -195,6 +197,9 @@ option is \code{TRUE} then blank rows will not be represented at all.  If it is
 }
 \description{
 Read a delimited file by chunks
+}
+\details{
+The number of lines in \code{file} can exceed the maximum integer value in R (~2 billion).
 }
 \examples{
 # Cars with 3 gears

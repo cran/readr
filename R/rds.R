@@ -5,18 +5,20 @@
 #' than time.
 #'
 #' @param file The file path to read from/write to.
-#' @keywords internal
+#' @param refhook A function to handle reference objects.
 #' @export
 #' @examples
 #' temp <- tempfile()
 #' write_rds(mtcars, temp)
 #' read_rds(temp)
-#'
 #' \dontrun{
 #' write_rds(mtcars, "compressed_mtc.rds", "xz", compression = 9L)
 #' }
-read_rds <- function(file) {
-  readRDS(file)
+read_rds <- function(file, refhook = NULL) {
+  con <- file(file)
+  on.exit(close(con))
+
+  readRDS(con, refhook = refhook)
 }
 
 
@@ -33,7 +35,7 @@ read_rds <- function(file) {
 #' @rdname read_rds
 #' @export
 write_rds <- function(x, file, compress = c("none", "gz", "bz2", "xz"),
-                      version = 2, path = deprecated(), ...) {
+                      version = 2, refhook = NULL, path = deprecated(), ...) {
   if (is_present(path)) {
     deprecate_warn("1.4.0", "write_rds(path = )", "write_rds(file = )")
     file <- path
@@ -41,12 +43,13 @@ write_rds <- function(x, file, compress = c("none", "gz", "bz2", "xz"),
 
   compress <- match.arg(compress)
   con <- switch(compress,
-         none = file(file, ...),
-         gz   = gzfile(file, ...),
-         bz2  = bzfile(file, ...),
-         xz   = xzfile(file, ...))
+    none = file(file, ...),
+    gz = gzfile(file, ...),
+    bz2 = bzfile(file, ...),
+    xz = xzfile(file, ...)
+  )
   on.exit(close(con), add = TRUE)
-  saveRDS(x, con, version = version)
+  saveRDS(x, con, version = version, refhook = refhook)
 
   invisible(x)
 }

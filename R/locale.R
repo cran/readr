@@ -64,7 +64,7 @@ locale <- function(date_names = "en",
     stop("`decimal_mark` and `grouping_mark` must be different", call. = FALSE)
   }
 
-  check_tz(tz)
+  tz <- check_tz(tz)
   check_encoding(encoding)
 
   structure(
@@ -86,8 +86,10 @@ is.locale <- function(x) inherits(x, "locale")
 #' @export
 print.locale <- function(x, ...) {
   cat("<locale>\n")
-  cat("Numbers:  ", prettyNum(123456.78, big.mark = x$grouping_mark,
-    decimal.mark = x$decimal_mark, digits = 8), "\n", sep = "")
+  cat("Numbers:  ", prettyNum(123456.78,
+    big.mark = x$grouping_mark,
+    decimal.mark = x$decimal_mark, digits = 8
+  ), "\n", sep = "")
   cat("Formats:  ", x$date_format, " / ", x$time_format, "\n", sep = "")
   cat("Timezone: ", x$tz, "\n", sep = "")
   cat("Encoding: ", x$encoding, "\n", sep = "")
@@ -109,19 +111,27 @@ default_locale <- function() {
 check_tz <- function(x) {
   stopifnot(is.character(x), length(x) == 1)
 
-  if (identical(x, ""))
-    return(TRUE)
+  if (identical(x, "")) {
+    x <- Sys.timezone()
 
-  if (x %in% OlsonNames())
-    return(TRUE)
+    if (identical(x, "") || identical(x, NA_character_)) {
+      x <- "UTC"
+    }
+  }
 
-  stop("Unknown TZ ", x, call. = FALSE)
+  if (x %in% tzdb::tzdb_names()) {
+    x
+  } else {
+    stop("Unknown TZ ", x, call. = FALSE)
+  }
 }
+
 check_encoding <- function(x) {
   stopifnot(is.character(x), length(x) == 1)
 
-  if (tolower(x) %in% tolower(iconvlist()))
+  if (tolower(x) %in% tolower(iconvlist())) {
     return(TRUE)
+  }
 
   stop("Unknown encoding ", x, call. = FALSE)
 }

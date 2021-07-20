@@ -23,7 +23,7 @@
 #' write_file(x, tmp)
 #' identical(x, read_file(tmp))
 #'
-#' read_lines(x)
+#' read_lines(I(x))
 read_file <- function(file, locale = default_locale()) {
   if (empty_file(file)) {
     return("")
@@ -53,6 +53,8 @@ write_file <- function(x, file, append = FALSE, path = deprecated()) {
     deprecate_warn("1.4.0", "write_file(path = )", "write_file(file = )")
     file <- path
   }
+
+  force(x)
 
   file <- standardise_path(file, input = FALSE)
   if (!isOpen(file)) {

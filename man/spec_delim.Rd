@@ -6,17 +6,18 @@
 \alias{spec_csv2}
 \alias{spec_tsv}
 \alias{spec_table}
-\alias{spec_table2}
 \title{Generate a column specification}
 \usage{
 spec_delim(
   file,
-  delim,
+  delim = NULL,
   quote = "\\"",
   escape_backslash = FALSE,
   escape_double = TRUE,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -25,14 +26,20 @@ spec_delim(
   skip = 0,
   n_max = 0,
   guess_max = 1000,
+  name_repair = "unique",
+  num_threads = readr_threads(),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 spec_csv(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -42,14 +49,20 @@ spec_csv(
   skip = 0,
   n_max = 0,
   guess_max = 1000,
+  name_repair = "unique",
+  num_threads = readr_threads(),
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 spec_csv2(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -60,13 +73,19 @@ spec_csv2(
   n_max = 0,
   guess_max = 1000,
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  name_repair = "unique",
+  num_threads = readr_threads(),
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 spec_tsv(
   file,
   col_names = TRUE,
   col_types = NULL,
+  col_select = NULL,
+  id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
   quoted_na = TRUE,
@@ -77,24 +96,14 @@ spec_tsv(
   n_max = 0,
   guess_max = 1000,
   progress = show_progress(),
-  skip_empty_rows = TRUE
+  name_repair = "unique",
+  num_threads = readr_threads(),
+  show_col_types = should_show_types(),
+  skip_empty_rows = TRUE,
+  lazy = TRUE
 )
 
 spec_table(
-  file,
-  col_names = TRUE,
-  col_types = NULL,
-  locale = default_locale(),
-  na = "NA",
-  skip = 0,
-  n_max = 0,
-  guess_max = 1000,
-  progress = show_progress(),
-  comment = "",
-  skip_empty_rows = TRUE
-)
-
-spec_table2(
   file,
   col_names = TRUE,
   col_types = NULL,
@@ -150,16 +159,18 @@ the first row of the output data frame.
 
 Missing (\code{NA}) column names will generate a warning, and be filled
 in with dummy names \code{X1}, \code{X2} etc. Duplicate column names
-will generate a warning and be made unique with a numeric suffix.}
+will generate a warning and be made unique, see \code{name_repair} to control
+how this is done.}
 
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
 a string. See \code{vignette("readr")} for more details.
 
 If \code{NULL}, all column types will be imputed from the first 1000 rows
 on the input. This is convenient (and fast), but not robust. If the
-imputation fails, you'll need to supply the correct types yourself.
+imputation fails, you'll need to increase the \code{guess_max} or supply the
+correct types yourself.
 
-If a column specification created by \code{\link[=cols]{cols()}}, it must contain
+Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
 subset of the columns, use \code{\link[=cols_only]{cols_only()}}.
 
@@ -180,8 +191,18 @@ character represents one column:
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-use \code{col_types = cols()}.
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
+
+\item{col_select}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to include
+in the results, either by name or by numeric index. Use \code{\link[=c]{c()}} or \code{\link[=list]{list()}}
+to select with more than one expression and \code{\link[tidyselect:language]{?tidyselect::language}} for full
+details on the selection language.}
+
+\item{id}{The name of a column in which to store the file path. This is
+useful when reading multiple input files and there is data in the file
+paths, such as the data collection date. If \code{NULL} (the default) no extra
+column is created.}
 
 \item{locale}{The locale controls defaults that vary from place to place.
 The default locale is US-centric (like R), but you can use
@@ -198,24 +219,55 @@ values (the default) or strings.}
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
 
-\item{trim_ws}{Should leading and trailing whitespace be trimmed from
+\item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
-\item{skip}{Number of lines to skip before reading data.}
+\item{skip}{Number of lines to skip before reading data. If \code{comment} is
+supplied any commented lines are ignored \emph{after} skipping.}
 
-\item{n_max}{Maximum number of records to read.}
+\item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of records to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.}
+
+\item{name_repair}{Treatment of problematic column names:
+\itemize{
+\item \code{"minimal"}: No name repair or checks, beyond basic existence of names
+\item \code{"unique"}: Make sure names are unique and not empty
+\item \code{"check_unique"}: (default value), no name repair, but check they are
+\code{unique}
+\item \code{"universal"}: Make the names \code{unique} and syntactic
+\item a function: apply custom name repair (e.g., \code{.name_repair = make.names}
+for names in the style of base R)
+\item A purrr-style anonymous function, see \code{\link[rlang:as_function]{rlang::as_function()}}
+}
+
+This argument is passed on as \code{repair} to \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}.
+See there for more details on these terms and the strategies used
+to enforce them.}
+
+\item{num_threads}{The number of processing threads to use for initial
+parsing and lazy reading of data.}
 
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
+
+\item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
+\code{TRUE} always show the column types, even if they are supplied. If \code{NULL}
+(the default) only show the column types if they are not explicitly supplied
+by the \code{col_types} argument.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is
 \code{FALSE} then they will be represented by \code{NA} values in all the columns.}
+
+\item{lazy}{Read values lazily? By default the file is initially only
+indexed and the values are read lazily when accessed. Lazy reading is
+useful interactively, particularly if you are only interested in a subset
+of the full dataset. Note, lazy reading on windows will lock the file
+until all the data has been read from it, if you run into this issue set
+\code{lazy = FALSE}.}
 }
 \value{
 The \code{col_spec} generated for the file.
@@ -232,7 +284,7 @@ spec_csv(system.file("extdata/mtcars.csv", package = "readr"))
 spec_csv(system.file("extdata/mtcars.csv.zip", package = "readr"))
 
 # Or directly from a string (must contain a newline)
-spec_csv("x,y\n1,2\n3,4")
+spec_csv(I("x,y\n1,2\n3,4"))
 
 # Column types --------------------------------------------------------------
 # By default, readr guesses the columns types, looking at the first 1000 rows.

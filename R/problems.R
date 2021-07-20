@@ -21,30 +21,36 @@
 #'
 #' y <- parse_integer(c("1", "2", "3"))
 #' problems(y)
-problems <- function(x) {
-  probs <- probs(x)
-  if (is.null(probs)) {
-    structure(
-      data.frame(
-        row = integer(),
-        col = integer(),
-        expected = character(),
-        actual = character(),
-        stringsAsFactors = FALSE
-      ),
-      class = c("tbl_df", "data.frame")
-    )
-  } else {
-    probs
+problems <- local({
+  no_problems <- tibble::tibble(
+    row = integer(),
+    col = integer(),
+    expected = character(),
+    actual = character()
+  )
+
+  function(x = .Last.value) {
+    problems <- probs(x)
+
+    if (is.null(problems)) {
+      return(invisible(no_problems))
+    }
+
+    if (inherits(problems, "tbl_df")) {
+      return(problems)
+    }
+
+    vroom::problems(x)
   }
-}
+})
 
 #' @export
 #' @rdname problems
 stop_for_problems <- function(x) {
   n <- n_problems(x)
-  if (n == 0)
+  if (n == 0) {
     return(invisible(x))
+  }
 
   stop(n, " parsing failure", if (n > 1) "s", call. = FALSE)
 }
@@ -54,13 +60,14 @@ probs <- function(x) {
 }
 
 n_problems <- function(x) {
-  probs <- probs(x)
+  probs <- problems(x)
   if (is.null(probs)) 0 else nrow(probs)
 }
 
 problem_rows <- function(x) {
-  if (n_problems(x) == 0)
+  if (n_problems(x) == 0) {
     return(x[0, , drop = FALSE])
+  }
 
   probs <- problems(x)
   x[unique(probs$row), , drop = FALSE]
@@ -68,8 +75,9 @@ problem_rows <- function(x) {
 
 warn_problems <- function(x) {
   n <- n_problems(x)
-  if (n == 0)
+  if (n == 0) {
     return(x)
+  }
 
   probs <- as.data.frame(attr(x, "problems"))
   many_problems <- nrow(probs) > 5
@@ -80,9 +88,11 @@ warn_problems <- function(x) {
   probs_f <- lapply(probs_f, format, justify = "right")
 
   if (many_problems) {
-    width <- vapply(probs_f, function(x) max(nchar(x)), integer(1))
+    # nchar fails with non-ascii characters, so encode characters beforehand.
+    width <- vapply(probs_f, function(x) max(nchar(encodeString(x))), integer(1))
     dots <- vapply(width, function(i) paste(rep(".", i), collapse = ""),
-      FUN.VALUE = character(1))
+      FUN.VALUE = character(1)
+    )
 
     probs_f <- Map(c, probs_f, dots)
   }
@@ -91,15 +101,16 @@ warn_problems <- function(x) {
   warning(n, " parsing failure", if (n > 1) "s", ".\n",
     probs_f, "\n",
     if (many_problems) "See problems(...) for more details.\n",
-    call. = FALSE, immediate. = TRUE, noBreaks. = TRUE)
+    call. = FALSE, immediate. = TRUE, noBreaks. = TRUE
+  )
 
   x
 }
 
 name_problems <- function(x, all_colnames, name = "input") {
-
-  if (n_problems(x) == 0)
+  if (n_problems(x) == 0) {
     return(x)
+  }
 
   problems <- problems(x)
   problems$file <- name

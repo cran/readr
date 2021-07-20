@@ -10,13 +10,21 @@ read_lines(
   file,
   skip = 0,
   skip_empty_rows = FALSE,
-  n_max = -1L,
+  n_max = Inf,
   locale = default_locale(),
   na = character(),
+  lazy = TRUE,
+  num_threads = readr_threads(),
   progress = show_progress()
 )
 
-read_lines_raw(file, skip = 0, n_max = -1L, progress = show_progress())
+read_lines_raw(
+  file,
+  skip = 0,
+  n_max = -1L,
+  num_threads = readr_threads(),
+  progress = show_progress()
+)
 
 write_lines(
   x,
@@ -24,6 +32,7 @@ write_lines(
   sep = "\\n",
   na = "NA",
   append = FALSE,
+  num_threads = readr_threads(),
   path = deprecated()
 )
 }
@@ -61,11 +70,20 @@ names.}
 \item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
+\item{lazy}{Read values lazily? By default the file is initially only
+indexed and the values are read lazily when accessed. Lazy reading is
+useful interactively, particularly if you are only interested in a subset
+of the full dataset. Note, lazy reading on windows will lock the file
+until all the data has been read from it, if you run into this issue set
+\code{lazy = FALSE}.}
+
+\item{num_threads}{The number of processing threads to use for initial
+parsing and lazy reading of data.}
+
 \item{progress}{Display a progress bar? By default it will only display
-in an interactive session and not while knitting a document. The display
-is updated every 50,000 values and will only display if estimated reading
-time is 5 seconds or more. The automatic progress bar can be disabled by
-setting option \code{readr.show_progress} to \code{FALSE}.}
+in an interactive session and not while knitting a document. The automatic
+progress bar can be disabled by setting option \code{readr.show_progress} to
+\code{FALSE}.}
 
 \item{x}{A character vector or list of raw vectors to write to disk.}
 
@@ -99,7 +117,7 @@ read_lines_raw(file.path(R.home("doc"), "AUTHORS"), n_max = 10)
 tmp <- tempfile()
 
 write_lines(rownames(mtcars), tmp)
-read_lines(tmp)
+read_lines(tmp, lazy = FALSE)
 read_file(tmp) # note trailing \n
 
 write_lines(airquality$Ozone, tmp, na = "-1")

@@ -24,26 +24,46 @@
 #' tmp <- tempfile()
 #'
 #' write_lines(rownames(mtcars), tmp)
-#' read_lines(tmp)
+#' read_lines(tmp, lazy = FALSE)
 #' read_file(tmp) # note trailing \n
 #'
 #' write_lines(airquality$Ozone, tmp, na = "-1")
 #' read_lines(tmp)
-read_lines <- function(file, skip = 0, skip_empty_rows = FALSE, n_max = -1L,
+read_lines <- function(file, skip = 0, skip_empty_rows = FALSE, n_max = Inf,
                        locale = default_locale(),
                        na = character(),
+                       lazy = TRUE,
+                       num_threads = readr_threads(),
                        progress = show_progress()) {
-  if (empty_file(file)) {
-    return(character())
+  if (edition_first()) {
+    if (is.infinite(n_max)) {
+      n_max <- -1L
+    }
+    if (empty_file(file)) {
+      return(character())
+    }
+    ds <- datasource(file, skip = skip, skip_empty_rows = skip_empty_rows, skip_quote = FALSE)
+    return(read_lines_(ds, skip_empty_rows = skip_empty_rows, locale_ = locale, na = na, n_max = n_max, progress = progress))
   }
-  ds <- datasource(file, skip = skip, skip_empty_rows = skip_empty_rows, skip_quote = FALSE)
-  read_lines_(ds, skip_empty_rows = skip_empty_rows, locale_ = locale, na = na, n_max = n_max, progress = progress)
+
+  vroom::vroom_lines(file,
+    skip = skip,
+    locale = locale,
+    n_max = n_max,
+    progress = progress,
+    altrep = lazy,
+    skip_empty_rows = skip_empty_rows,
+    na = na,
+    num_threads = num_threads
+  )
 }
 
 #' @export
 #' @rdname read_lines
 read_lines_raw <- function(file, skip = 0,
-                           n_max = -1L, progress = show_progress()) {
+                           n_max = -1L,
+                           num_threads = readr_threads(),
+                           progress = show_progress()) {
   if (empty_file(file)) {
     return(list())
   }
@@ -56,27 +76,38 @@ read_lines_raw <- function(file, skip = 0,
 #' @return `write_lines()` returns `x`, invisibly.
 #' @export
 #' @rdname read_lines
-write_lines <- function(x, file, sep = "\n", na = "NA", append = FALSE, path = deprecated()) {
+write_lines <- function(x, file, sep = "\n", na = "NA", append = FALSE,
+                        num_threads = readr_threads(),
+                        path = deprecated()) {
+  is_raw <- is.list(x) && inherits(x[[1]], "raw")
+
   if (is_present(path)) {
     deprecate_warn("1.4.0", "write_lines(path = )", "write_lines(file = )")
     file <- path
   }
 
-  is_raw <- is.list(x) && inherits(x[[1]], "raw")
-  if (!is_raw) {
-    x <- as.character(x)
+  if (is_raw || edition_first()) {
+
+    is_raw <- is.list(x) && inherits(x[[1]], "raw")
+    if (!is_raw) {
+      x <- as.character(x)
+    }
+
+    file <- standardise_path(file, input = FALSE)
+    if (!isOpen(file)) {
+      on.exit(close(file), add = TRUE)
+      open(file, if (isTRUE(append)) "ab" else "wb")
+    }
+    if (is_raw) {
+      write_lines_raw_(x, file, sep)
+    } else {
+      write_lines_(x, file, na, sep)
+    }
+
+    return(invisible(x))
   }
 
-  file <- standardise_path(file, input = FALSE)
-  if (!isOpen(file)) {
-    on.exit(close(file), add = TRUE)
-    open(file, if (isTRUE(append)) "ab" else "wb")
-  }
-  if (is_raw) {
-    write_lines_raw_(x, file, sep)
-  } else {
-    write_lines_(x, file, na, sep)
-  }
+  vroom::vroom_write_lines(as.character(x), file, eol = sep, na = na, append = append, num_threads = num_threads)
 
   invisible(x)
 }

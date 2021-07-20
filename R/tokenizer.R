@@ -43,8 +43,8 @@ NULL
 #'   values (the default) or strings.
 #' @param delim Single character used to separate fields within a record.
 #' @param quote Single character used to quote strings.
-#' @param trim_ws Should leading and trailing whitespace be trimmed from
-#'   each field before parsing it?
+#' @param trim_ws Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
+#'     each field before parsing it?
 #' @param escape_double Does the file escape quotes by doubling them?
 #'   i.e. If this option is `TRUE`, the value `""""` represents
 #'   a single quote, `\"`.
@@ -116,13 +116,14 @@ tokenizer_tsv <- function(na = "NA", quoted_na = TRUE, quote = "\"",
 #' @rdname Tokenizers
 tokenizer_line <- function(na = character(), skip_empty_rows = TRUE) {
   structure(list(na = na, skip_empty_rows = skip_empty_rows),
-            class = "tokenizer_line")
+    class = "tokenizer_line"
+  )
 }
 
 #' @export
 #' @rdname Tokenizers
-tokenizer_log <- function() {
-  structure(list(), class = "tokenizer_log")
+tokenizer_log <- function(trim_ws) {
+  structure(list(trim_ws = trim_ws), class = "tokenizer_log")
 }
 
 
@@ -133,14 +134,18 @@ tokenizer_log <- function() {
 #'   [begin, end) (i.e inclusive-exclusive).
 tokenizer_fwf <- function(begin, end, na = "NA", comment = "", trim_ws = TRUE,
                           skip_empty_rows = TRUE) {
-  structure(list(begin = as.integer(begin), end = as.integer(end), na = na, comment = comment,
-                 trim_ws = trim_ws, skip_empty_rows = skip_empty_rows),
-            class = "tokenizer_fwf")
+  structure(list(
+    begin = as.integer(begin), end = as.integer(end), na = na, comment = comment,
+    trim_ws = trim_ws, skip_empty_rows = skip_empty_rows
+  ),
+  class = "tokenizer_fwf"
+  )
 }
 
 #' @export
 #' @rdname Tokenizers
 tokenizer_ws <- function(na = "NA", comment = "", skip_empty_rows = TRUE) {
   structure(list(na = na, comment = comment, skip_empty_rows = skip_empty_rows),
-            class = "tokenizer_ws")
+    class = "tokenizer_ws"
+  )
 }

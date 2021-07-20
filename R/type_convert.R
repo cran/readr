@@ -32,7 +32,8 @@
 #'
 #' # first read the data as character
 #' data <- read_csv(readr_example("mtcars.csv"),
-#'                  col_types = cols(.default = col_character()))
+#'   col_types = list(.default = col_character())
+#' )
 #' str(data)
 #' # Then convert it with type_convert
 #' type_convert(data)
@@ -40,6 +41,10 @@ type_convert <- function(df, col_types = NULL, na = c("", "NA"), trim_ws = TRUE,
                          locale = default_locale()) {
   stopifnot(is.data.frame(df))
   is_character <- vapply(df, is.character, logical(1))
+
+  if (!any(is_character)) {
+    warning("`type_convert()` only converts columns of type 'character'.\n- `df` has no columns of type 'character'", call. = FALSE)
+  }
 
   char_cols <- df[is_character]
 
@@ -50,7 +55,7 @@ type_convert <- function(df, col_types = NULL, na = c("", "NA"), trim_ws = TRUE,
   specs <- col_spec_standardise(
     col_types = col_types,
     col_names = names(char_cols),
-    guessed_types =  guesses
+    guessed_types = guesses
   )
 
   if (is.null(col_types) && !is_testing()) {
@@ -59,7 +64,8 @@ type_convert <- function(df, col_types = NULL, na = c("", "NA"), trim_ws = TRUE,
 
   df[is_character] <- lapply(seq_along(char_cols), function(i) {
     type_convert_col(char_cols[[i]], specs$cols[[i]], which(is_character)[i],
-      locale_ = locale, na = na, trim_ws = trim_ws)
+      locale_ = locale, na = na, trim_ws = trim_ws
+    )
   })
 
   attr(df, "spec") <- NULL
@@ -82,7 +88,8 @@ keep_character_col_types <- function(df, col_types) {
         "`df` and `col_types` must have consistent lengths:\n",
         "  * `df` has length ", length(df), "\n",
         "  * `col_types` has length ", nchar(col_types),
-        call. = FALSE)
+        call. = FALSE
+      )
     }
 
     idx <- which(is_character)

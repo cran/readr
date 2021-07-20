@@ -12,10 +12,11 @@
 #include "LocaleInfo.h"
 #include "Token.h"
 #include "Warnings.h"
-#include <boost/shared_ptr.hpp>
+#include <map>
+#include <memory>
 
 class Collector;
-typedef boost::shared_ptr<Collector> CollectorPtr;
+typedef std::shared_ptr<Collector> CollectorPtr;
 
 class Collector {
 protected:
@@ -84,7 +85,7 @@ public:
     warn(row, col, expected, std::string(actual.first, actual.second));
   }
 
-  static CollectorPtr create(cpp11::list spec, LocaleInfo* pLocale);
+  static CollectorPtr create(const cpp11::list& spec, LocaleInfo* pLocale);
 };
 
 // Character -------------------------------------------------------------------
@@ -158,9 +159,9 @@ class CollectorFactor : public Collector {
   std::vector<cpp11::r_string> levels_;
   std::map<cpp11::r_string, int> levelset_;
   bool ordered_, implicitLevels_, includeNa_;
-  boost::container::string buffer_;
+  std::string buffer_;
 
-  void insert(int i, cpp11::r_string str, const Token& t);
+  void insert(int i, const cpp11::r_string& str, const Token& t);
 
 public:
   CollectorFactor(
@@ -271,10 +272,12 @@ public:
 // Helpers ---------------------------------------------------------------------
 
 std::vector<CollectorPtr>
-collectorsCreate(cpp11::list specs, LocaleInfo* pLocale);
+collectorsCreate(const cpp11::list& specs, LocaleInfo* pLocale);
 void collectorsResize(std::vector<CollectorPtr>& collectors, int n);
 void collectorsClear(std::vector<CollectorPtr>& collectors);
 std::string collectorGuess(
-    cpp11::strings input, cpp11::list locale_, bool guessInteger = false);
+    const cpp11::strings& input,
+    const cpp11::list& locale_,
+    bool guessInteger = false);
 
 #endif
