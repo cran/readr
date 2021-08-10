@@ -15,7 +15,7 @@ spec_delim(
   escape_backslash = FALSE,
   escape_double = TRUE,
   col_names = TRUE,
-  col_types = NULL,
+  col_types = list(),
   col_select = NULL,
   id = NULL,
   locale = default_locale(),
@@ -37,7 +37,7 @@ spec_delim(
 spec_csv(
   file,
   col_names = TRUE,
-  col_types = NULL,
+  col_types = list(),
   col_select = NULL,
   id = NULL,
   locale = default_locale(),
@@ -60,7 +60,7 @@ spec_csv(
 spec_csv2(
   file,
   col_names = TRUE,
-  col_types = NULL,
+  col_types = list(),
   col_select = NULL,
   id = NULL,
   locale = default_locale(),
@@ -83,7 +83,7 @@ spec_csv2(
 spec_tsv(
   file,
   col_names = TRUE,
-  col_types = NULL,
+  col_types = list(),
   col_select = NULL,
   id = NULL,
   locale = default_locale(),
@@ -106,7 +106,7 @@ spec_tsv(
 spec_table(
   file,
   col_names = TRUE,
-  col_types = NULL,
+  col_types = list(),
   locale = default_locale(),
   na = "NA",
   skip = 0,
@@ -127,9 +127,9 @@ be automatically uncompressed. Files starting with \verb{http://},
 downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
-Literal data is most useful for examples and tests. It must contain at
-least one new line to be recognised as data (instead of a path) or be a
-vector of greater than length 1.
+Literal data is most useful for examples and tests. To be recognised as a
+path, it must be wrapped with \code{I()}, be a string containing at least one
+new line, or be a vector containing at least one string with a new line.
 
 Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
@@ -246,7 +246,10 @@ See there for more details on these terms and the strategies used
 to enforce them.}
 
 \item{num_threads}{The number of processing threads to use for initial
-parsing and lazy reading of data.}
+parsing and lazy reading of data. If your data contains newlines within
+fields the parser should automatically detect this and fall back to using
+one thread only. However if you know your file has newlines within quoted
+fields it is safest to set \code{num_threads = 1} explicitly.}
 
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session and not while knitting a document. The automatic

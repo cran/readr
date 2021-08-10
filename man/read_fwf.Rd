@@ -54,9 +54,9 @@ be automatically uncompressed. Files starting with \verb{http://},
 downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
-Literal data is most useful for examples and tests. It must contain at
-least one new line to be recognised as data (instead of a path) or be a
-vector of greater than length 1.
+Literal data is most useful for examples and tests. To be recognised as a
+path, it must be wrapped with \code{I()}, be a string containing at least one
+new line, or be a vector containing at least one string with a new line.
 
 Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
@@ -150,7 +150,10 @@ See there for more details on these terms and the strategies used
 to enforce them.}
 
 \item{num_threads}{The number of processing threads to use for initial
-parsing and lazy reading of data.}
+parsing and lazy reading of data. If your data contains newlines within
+fields the parser should automatically detect this and fall back to using
+one thread only. However if you know your file has newlines within quoted
+fields it is safest to set \code{num_threads = 1} explicitly.}
 
 \item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
 \code{TRUE} always show the column types, even if they are supplied. If \code{NULL}

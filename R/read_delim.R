@@ -86,7 +86,10 @@ NULL
 #'   until all the data has been read from it, if you run into this issue set
 #'   `lazy = FALSE`.
 #' @param num_threads The number of processing threads to use for initial
-#'   parsing and lazy reading of data.
+#'   parsing and lazy reading of data. If your data contains newlines within
+#'   fields the parser should automatically detect this and fall back to using
+#'   one thread only. However if you know your file has newlines within quoted
+#'   fields it is safest to set `num_threads = 1` explicitly.
 #' @param name_repair Treatment of problematic column names:
 #'   * `"minimal"`: No name repair or checks, beyond basic existence of names
 #'   * `"unique"`: Make sure names are unique and not empty
@@ -357,15 +360,19 @@ read_tsv <- function(file, col_names = TRUE, col_types = NULL,
     col_select = {{ col_select }},
     id = id,
     .name_repair = name_repair,
-    locale = locale,
     skip = skip,
+    n_max = n_max,
+    na = na,
+    quote = quote,
     comment = comment,
     skip_empty_rows = skip_empty_rows,
     trim_ws = trim_ws,
-    n_max = n_max,
+    escape_double = TRUE,
+    escape_backslash = FALSE,
+    locale = locale,
     guess_max = guess_max,
-    progress = progress,
     show_col_types = show_col_types,
+    progress = progress,
     altrep = lazy,
     num_threads = num_threads
   )
@@ -430,13 +437,10 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
 generate_spec_fun <- function(f) {
   formals(f)$n_max <- 0
   formals(f)$guess_max <- 1000
+  formals(f)$col_types <- list()
 
-  body(f) <- call("spec",
-    as.call(c(
-        call("function", NULL, bquote(with_edition(1, .(body)), list(body = body(f)))),
-        alist())
-    )
-  )
+  old_body <- body(f)
+  body(f) <- rlang::inject(quote(spec(with_edition(1, (function() !!old_body)()))))
   f
 }
 
