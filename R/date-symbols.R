@@ -3,7 +3,7 @@
 #' When parsing dates, you often need to know how weekdays of the week and
 #' months are represented as text. This pair of functions allows you to either
 #' create your own, or retrieve from a standard list. The standard list is
-#' derived from ICU (<http://site.icu-project.org>) via the stringi package.
+#' derived from ICU (`http://site.icu-project.org`) via the stringi package.
 #'
 #' @param mon,mon_ab Full and abbreviated month names.
 #' @param day,day_ab Full and abbreviated week day names. Starts with Sunday.
@@ -35,7 +35,7 @@ date_names <- function(mon, mon_ab = mon, day, day_ab = day,
 #' @export
 #' @rdname date_names
 #' @param language A BCP 47 locale, made up of a language and a region,
-#'   e.g. `"en_US"` for American English. See `date_names_langs()`
+#'   e.g. `"en"` for American English. See `date_names_langs()`
 #'   for a complete list of available locales.
 date_names_lang <- function(language) {
   stopifnot(is.character(language), length(language) == 1)

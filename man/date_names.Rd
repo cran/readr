@@ -20,14 +20,14 @@ date_names_langs()
 \item{am_pm}{Names used for AM and PM.}
 
 \item{language}{A BCP 47 locale, made up of a language and a region,
-e.g. \code{"en_US"} for American English. See \code{date_names_langs()}
+e.g. \code{"en"} for American English. See \code{date_names_langs()}
 for a complete list of available locales.}
 }
 \description{
 When parsing dates, you often need to know how weekdays of the week and
 months are represented as text. This pair of functions allows you to either
 create your own, or retrieve from a standard list. The standard list is
-derived from ICU (\url{http://site.icu-project.org}) via the stringi package.
+derived from ICU (\verb{http://site.icu-project.org}) via the stringi package.
 }
 \examples{
 date_names_lang("en")
