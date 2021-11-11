@@ -1,3 +1,11 @@
+# readr 2.1.0
+
+* All readr functions again read eagerly by default. Unfortunately many users
+  experienced frustration from the drawbacks of lazy reading, in particular
+  locking files on Windows, so it was decided to disable lazy reading default.
+  However `options(readr.read_lazy = TRUE)` can be used to set the default to by lazy if desired.
+* New `readr.read_lazy` global option to control if readr reads files lazily or not (#1266)
+
 # readr 2.0.2
 
 * minor test tweak for compatibility with testthat 3.1.0 (#@lionel-, #1304)

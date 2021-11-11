@@ -13,7 +13,7 @@ read_lines(
   n_max = Inf,
   locale = default_locale(),
   na = character(),
-  lazy = TRUE,
+  lazy = should_read_lazy(),
   num_threads = readr_threads(),
   progress = show_progress()
 )
@@ -46,9 +46,10 @@ be automatically uncompressed. Files starting with \verb{http://},
 downloaded. Remote gz files can also be automatically downloaded and
 decompressed.
 
-Literal data is most useful for examples and tests. To be recognised as a
-path, it must be wrapped with \code{I()}, be a string containing at least one
-new line, or be a vector containing at least one string with a new line.
+Literal data is most useful for examples and tests. To be recognised as
+literal data, the input must be either wrapped with \code{I()}, be a string
+containing at least one new line, or be a vector containing at least one
+string with a new line.
 
 Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
