@@ -25,6 +25,7 @@ read_delim_chunked(
   skip = 0,
   guess_max = chunk_size,
   progress = show_progress(),
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 
@@ -43,6 +44,7 @@ read_csv_chunked(
   skip = 0,
   guess_max = chunk_size,
   progress = show_progress(),
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 
@@ -61,6 +63,7 @@ read_csv2_chunked(
   skip = 0,
   guess_max = chunk_size,
   progress = show_progress(),
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 
@@ -79,6 +82,7 @@ read_tsv_chunked(
   skip = 0,
   guess_max = chunk_size,
   progress = show_progress(),
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 }
@@ -173,8 +177,9 @@ names.}
 \item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
-\item{quoted_na}{\Sexpr[results=rd, stage=render]{lifecycle::badge("deprecated")} Should missing values inside quotes be treated as missing
-values (the default) or strings. This parameter is soft deprecated as of readr 2.0.0.}
+\item{quoted_na}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Should missing values
+inside quotes be treated as missing values (the default) or strings. This
+parameter is soft deprecated as of readr 2.0.0.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
@@ -185,12 +190,18 @@ each field before parsing it?}
 \item{skip}{Number of lines to skip before reading data. If \code{comment} is
 supplied any commented lines are ignored \emph{after} skipping.}
 
-\item{guess_max}{Maximum number of lines to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.
+See \code{vignette("column-types", package = "readr")} for more details.}
 
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session and not while knitting a document. The automatic
 progress bar can be disabled by setting option \code{readr.show_progress} to
 \code{FALSE}.}
+
+\item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
+\code{TRUE} always show the column types, even if they are supplied. If \code{NULL}
+(the default) only show the column types if they are not explicitly supplied
+by the \code{col_types} argument.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is

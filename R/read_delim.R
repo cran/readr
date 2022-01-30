@@ -54,10 +54,12 @@ NULL
 #'    By default, reading a file without a column specification will print a
 #'    message showing what `readr` guessed they were. To remove this message,
 #'    set `show_col_types = FALSE` or set `options(readr.show_col_types = FALSE).
-#' @param col_select <[`tidy-select`][tidyselect::language]> Columns to include
-#'   in the results, either by name or by numeric index. Use [c()] or [list()]
-#'   to select with more than one expression and [`?tidyselect::language`][tidyselect::language] for full
-#'   details on the selection language.
+#' @param col_select Columns to include in the results. You can use the same
+#'   mini-language as `dplyr::select()` to refer to the columns by name. Use
+#'   `c()` or `list()` to use more than one selection expression. Although this
+#'   usage is less common, `col_select` also accepts a numeric column index. See
+#'   [`?tidyselect::language`][tidyselect::language] for full details on the
+#'   selection language.
 #' @param id The name of a column in which to store the file path. This is
 #'   useful when reading multiple input files and there is data in the file
 #'   paths, such as the data collection date. If `NULL` (the default) no extra
@@ -75,6 +77,7 @@ NULL
 #'   supplied any commented lines are ignored _after_ skipping.
 #' @param n_max Maximum number of lines to read.
 #' @param guess_max Maximum number of lines to use for guessing column types.
+#'   See `vignette("column-types", package = "readr")` for more details.
 #' @param progress Display a progress bar? By default it will only display
 #'   in an interactive session and not while knitting a document. The automatic
 #'   progress bar can be disabled by setting option `readr.show_progress` to
@@ -90,19 +93,21 @@ NULL
 #'   fields the parser should automatically detect this and fall back to using
 #'   one thread only. However if you know your file has newlines within quoted
 #'   fields it is safest to set `num_threads = 1` explicitly.
-#' @param name_repair Treatment of problematic column names:
-#'   * `"minimal"`: No name repair or checks, beyond basic existence of names
-#'   * `"unique"`: Make sure names are unique and not empty
-#'   * `"check_unique"`: (default value), no name repair, but check they are
-#'     `unique`
-#'   * `"universal"`: Make the names `unique` and syntactic
-#'   * a function: apply custom name repair (e.g., `.name_repair = make.names`
-#'     for names in the style of base R)
-#'   * A purrr-style anonymous function, see [rlang::as_function()]
+#' @param name_repair Handling of column names. The default behaviour is to
+#'   ensure column names are `"unique"`. Various repair strategies are
+#'   supported:
+#'   * `"minimal"`: No name repair or checks, beyond basic existence of names.
+#'   * `"unique"` (default value): Make sure names are unique and not empty.
+#'   * `"check_unique"`: no name repair, but check they are `unique`.
+#'   * `"universal"`: Make the names `unique` and syntactic.
+#'   * A function: apply custom name repair (e.g., `name_repair = make.names`
+#'     for names in the style of base R).
+#'   * A purrr-style anonymous function, see [rlang::as_function()].
 #'
 #'   This argument is passed on as `repair` to [vctrs::vec_as_names()].
 #'   See there for more details on these terms and the strategies used
 #'   to enforce them.
+#'
 #' @return A [tibble()]. If there are parsing problems, a warning will alert you.
 #'   You can retrieve the full details by calling [problems()] on your dataset.
 #' @export
@@ -114,7 +119,7 @@ NULL
 #' read_csv(readr_example("mtcars.csv.bz2"))
 #' \dontrun{
 #' # Including remote paths
-#' read_csv("https://github.com/tidyverse/readr/raw/master/inst/extdata/mtcars.csv")
+#' read_csv("https://github.com/tidyverse/readr/raw/main/inst/extdata/mtcars.csv")
 #' }
 #'
 #' # Or directly from a string with `I()`
@@ -169,7 +174,8 @@ read_delim <- function(file, delim = NULL, quote = '"',
     return(read_delimited(file, tokenizer,
       col_names = col_names, col_types = col_types,
       locale = locale, skip = skip, skip_empty_rows = skip_empty_rows,
-      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress
+      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress,
+      show_col_types = show_col_types
     ))
   }
   if (!missing(quoted_na)) {
@@ -230,7 +236,8 @@ read_csv <- function(file,
       read_delimited(file, tokenizer,
         col_names = col_names, col_types = col_types,
         locale = locale, skip = skip, skip_empty_rows = skip_empty_rows,
-        comment = comment, n_max = n_max, guess_max = guess_max, progress = progress
+        comment = comment, n_max = n_max, guess_max = guess_max, progress = progress,
+        show_col_types = show_col_types
       )
     )
   }
@@ -300,7 +307,8 @@ read_csv2 <- function(file,
     return(read_delimited(file, tokenizer,
       col_names = col_names, col_types = col_types,
       locale = locale, skip = skip, skip_empty_rows = skip_empty_rows,
-      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress
+      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress,
+      show_col_types = show_col_types
     ))
   }
   vroom::vroom(file,
@@ -349,7 +357,8 @@ read_tsv <- function(file, col_names = TRUE, col_types = NULL,
     return(read_delimited(file, tokenizer,
       col_names = col_names, col_types = col_types,
       locale = locale, skip = skip, skip_empty_rows = skip_empty_rows,
-      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress
+      comment = comment, n_max = n_max, guess_max = guess_max, progress = progress,
+      show_col_types = show_col_types
     ))
   }
 
@@ -388,7 +397,8 @@ read_tokens <- function(data, tokenizer, col_specs, col_names, locale_, n_max, p
 
 read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
                            locale = default_locale(), skip = 0, skip_empty_rows = TRUE, skip_quote = TRUE,
-                           comment = "", n_max = Inf, guess_max = min(1000, n_max), progress = show_progress()) {
+                           comment = "", n_max = Inf, guess_max = min(1000, n_max), progress = show_progress(),
+                           show_col_types = should_show_types()) {
   name <- source_name(file)
   # If connection needed, read once.
   file <- standardise_path(file)
@@ -420,7 +430,12 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
 
   ds <- datasource(data, skip = spec$skip, skip_empty_rows = skip_empty_rows, comment = comment, skip_quote = skip_quote)
 
-  if (is.null(col_types) && !inherits(ds, "source_string") && !is_testing()) {
+  has_col_types <- !is.null(col_types)
+
+  if (
+    ((is.null(show_col_types) && !has_col_types) || isTRUE(show_col_types)) &&
+    !inherits(ds, "source_string")
+  ) {
     show_cols_spec(spec)
   }
 

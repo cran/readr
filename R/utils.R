@@ -12,27 +12,43 @@ is_syntactic <- function(x) make.names(x) == x
 
 #' Determine whether progress bars should be shown
 #'
-#' Progress bars are shown _unless_ one of the following is `TRUE`
-#' - The bar is explicitly disabled by setting `options(readr.show_progress = FALSE)`
-#' - The code is run in a non-interactive session (`interactive()` is `FALSE`).
-#' - The code is run in an RStudio notebook chunk.
-#' - The code is run by knitr / rmarkdown.
+#' By default, readr shows progress bars. However, progress reporting is
+#' suppressed if any of the following conditions hold:
+#' - The bar is explicitly disabled by setting
+#'   `options(readr.show_progress = FALSE)`.
+#' - The code is run in a non-interactive session, as determined by
+#'   [rlang::is_interactive()].
+#' - The code is run in an RStudio notebook chunk, as determined by
+#'   `getOption("rstudio.notebook.executing")`.
 #' @export
 show_progress <- function() {
-  isTRUE(getOption("readr.show_progress")) && # user disables progress bar
-    interactive() && # an interactive session
-    !isTRUE(getOption("rstudio.notebook.executing")) && # Not running in an RStudio notebook chunk
-    !isTRUE(getOption("knitr.in.progress")) # Not actively knitting a document
+  isTRUE(getOption("readr.show_progress")) &&
+    rlang::is_interactive() &&
+    # some analysis re: rstudio.notebook.executing can be found in:
+    # https://github.com/r-lib/rlang/issues/1031
+    # TL;DR it's not consulted by is_interactive(), but probably should be
+    # consulted for progress reporting specifically
+    !isTRUE(getOption("rstudio.notebook.executing"))
 }
 
 #' Determine whether column types should be shown
 #'
-#' Column types are shown unless
-#' - They are disabled by setting `options(readr.show_col_types = FALSE)`
-#' - The column types are supplied with the `col_types` argument.
+#' Wrapper around `getOption("readr.show_col_types")` that implements some fall
+#' back logic if the option is unset. This returns:
+#' * `TRUE` if the option is set to `TRUE`
+#' * `FALSE` if the option is set to `FALSE`
+#' * `FALSE` if the option is unset and we appear to be running tests
+#' * `NULL` otherwise, in which case the caller determines whether to show
+#'   column types based on context, e.g. whether `show_col_types` or actual
+#'   `col_types` were explicitly specified
 #' @export
 should_show_types <- function() {
-  if (identical(getOption("readr.show_col_types", TRUE), FALSE)) {
+  opt <- getOption("readr.show_col_types", NA)
+  if (isTRUE(opt)) {
+    TRUE
+  } else if (identical(opt, FALSE)) {
+    FALSE
+  } else if (is.na(opt) && is_testing()) {
     FALSE
   } else {
     NULL
@@ -173,4 +189,14 @@ readr_enquo <- function(x) {
     return(rlang::as_quosures(rlang::get_expr(x)[-1], rlang::get_env(x)))
   }
   x
+}
+
+check_string <- function(x, nm = deparse(substitute(x)), optional = FALSE) {
+  if (rlang::is_string(x)) {
+    return()
+  }
+  if (optional && is.null(x)) {
+    return()
+  }
+  stop("`", nm, "` must be a string.", call. = FALSE)
 }

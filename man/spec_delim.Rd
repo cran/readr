@@ -114,6 +114,7 @@ spec_table(
   guess_max = 1000,
   progress = show_progress(),
   comment = "",
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 }
@@ -195,10 +196,12 @@ message showing what \code{readr} guessed they were. To remove this message,
 set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
 }}
 
-\item{col_select}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to include
-in the results, either by name or by numeric index. Use \code{\link[=c]{c()}} or \code{\link[=list]{list()}}
-to select with more than one expression and \code{\link[tidyselect:language]{?tidyselect::language}} for full
-details on the selection language.}
+\item{col_select}{Columns to include in the results. You can use the same
+mini-language as \code{dplyr::select()} to refer to the columns by name. Use
+\code{c()} or \code{list()} to use more than one selection expression. Although this
+usage is less common, \code{col_select} also accepts a numeric column index. See
+\code{\link[tidyselect:language]{?tidyselect::language}} for full details on the
+selection language.}
 
 \item{id}{The name of a column in which to store the file path. This is
 useful when reading multiple input files and there is data in the file
@@ -214,8 +217,9 @@ names.}
 \item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
-\item{quoted_na}{\Sexpr[results=rd, stage=render]{lifecycle::badge("deprecated")} Should missing values inside quotes be treated as missing
-values (the default) or strings. This parameter is soft deprecated as of readr 2.0.0.}
+\item{quoted_na}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Should missing values
+inside quotes be treated as missing values (the default) or strings. This
+parameter is soft deprecated as of readr 2.0.0.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
@@ -228,18 +232,20 @@ supplied any commented lines are ignored \emph{after} skipping.}
 
 \item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of lines to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.
+See \code{vignette("column-types", package = "readr")} for more details.}
 
-\item{name_repair}{Treatment of problematic column names:
+\item{name_repair}{Handling of column names. The default behaviour is to
+ensure column names are \code{"unique"}. Various repair strategies are
+supported:
 \itemize{
-\item \code{"minimal"}: No name repair or checks, beyond basic existence of names
-\item \code{"unique"}: Make sure names are unique and not empty
-\item \code{"check_unique"}: (default value), no name repair, but check they are
-\code{unique}
-\item \code{"universal"}: Make the names \code{unique} and syntactic
-\item a function: apply custom name repair (e.g., \code{.name_repair = make.names}
-for names in the style of base R)
-\item A purrr-style anonymous function, see \code{\link[rlang:as_function]{rlang::as_function()}}
+\item \code{"minimal"}: No name repair or checks, beyond basic existence of names.
+\item \code{"unique"} (default value): Make sure names are unique and not empty.
+\item \code{"check_unique"}: no name repair, but check they are \code{unique}.
+\item \code{"universal"}: Make the names \code{unique} and syntactic.
+\item A function: apply custom name repair (e.g., \code{name_repair = make.names}
+for names in the style of base R).
+\item A purrr-style anonymous function, see \code{\link[rlang:as_function]{rlang::as_function()}}.
 }
 
 This argument is passed on as \code{repair} to \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}.

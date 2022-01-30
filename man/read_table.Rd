@@ -15,6 +15,7 @@ read_table(
   guess_max = min(n_max, 1000),
   progress = show_progress(),
   comment = "",
+  show_col_types = should_show_types(),
   skip_empty_rows = TRUE
 )
 }
@@ -96,7 +97,8 @@ option to \code{character()} to indicate no missing values.}
 
 \item{n_max}{Maximum number of lines to read.}
 
-\item{guess_max}{Maximum number of lines to use for guessing column types.}
+\item{guess_max}{Maximum number of lines to use for guessing column types.
+See \code{vignette("column-types", package = "readr")} for more details.}
 
 \item{progress}{Display a progress bar? By default it will only display
 in an interactive session and not while knitting a document. The automatic
@@ -105,6 +107,11 @@ progress bar can be disabled by setting option \code{readr.show_progress} to
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
+
+\item{show_col_types}{If \code{FALSE}, do not show the guessed column types. If
+\code{TRUE} always show the column types, even if they are supplied. If \code{NULL}
+(the default) only show the column types if they are not explicitly supplied
+by the \code{col_types} argument.}
 
 \item{skip_empty_rows}{Should blank rows be ignored altogether? i.e. If this
 option is \code{TRUE} then blank rows will not be represented at all.  If it is
@@ -120,16 +127,9 @@ characters between columns, and the lines can be of different lengths.
 \code{spec_table()} returns the column specifications rather than a data frame.
 }
 \examples{
-# One corner from http://www.masseyratings.com/cf/compare.htm
-massey <- readr_example("massey-rating.txt")
-cat(read_file(massey))
-read_table(massey)
-
-# Sample of 1978 fuel economy data from
-# http://www.fueleconomy.gov/feg/epadata/78data.zip
-epa <- readr_example("epa78.txt")
-cat(read_file(epa))
-read_table(epa, col_names = FALSE)
+ws <- readr_example("whitespace-sample.txt")
+writeLines(read_lines(ws))
+read_table(ws)
 }
 \seealso{
 \code{\link[=read_fwf]{read_fwf()}} to read fixed width files where each column
