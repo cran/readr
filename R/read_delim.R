@@ -10,6 +10,7 @@ NULL
 #' decimal point. This format is common in some European countries.
 #' @inheritParams datasource
 #' @inheritParams tokenizer_delim
+#' @inheritParams vroom::vroom
 #' @param col_names Either `TRUE`, `FALSE` or a character vector
 #'   of column names.
 #'
@@ -54,12 +55,6 @@ NULL
 #'    By default, reading a file without a column specification will print a
 #'    message showing what `readr` guessed they were. To remove this message,
 #'    set `show_col_types = FALSE` or set `options(readr.show_col_types = FALSE).
-#' @param col_select Columns to include in the results. You can use the same
-#'   mini-language as `dplyr::select()` to refer to the columns by name. Use
-#'   `c()` or `list()` to use more than one selection expression. Although this
-#'   usage is less common, `col_select` also accepts a numeric column index. See
-#'   [`?tidyselect::language`][tidyselect::language] for full details on the
-#'   selection language.
 #' @param id The name of a column in which to store the file path. This is
 #'   useful when reading multiple input files and there is data in the file
 #'   paths, such as the data collection date. If `NULL` (the default) no extra
@@ -82,12 +77,15 @@ NULL
 #'   in an interactive session and not while knitting a document. The automatic
 #'   progress bar can be disabled by setting option `readr.show_progress` to
 #'   `FALSE`.
-#' @param lazy Read values lazily? By default the file is initially only
-#'   indexed and the values are read lazily when accessed. Lazy reading is
-#'   useful interactively, particularly if you are only interested in a subset
-#'   of the full dataset. *Note*, if you later write to the same file you read
-#'   from you need to set `lazy = FALSE`. On Windows the file will be locked
-#'   and on other systems the memory map will become invalid.
+#' @param lazy Read values lazily? By default, this is `FALSE`, because there
+#'   are special considerations when reading a file lazily that have tripped up
+#'   some users. Specifically, things get tricky when reading and then writing
+#'   back into the same file. But, in general, lazy reading (`lazy = TRUE`) has
+#'   many benefits, especially for interactive use and when your downstream work
+#'   only involves a subset of the rows or columns.
+#'
+#'   Learn more in [should_read_lazy()] and in the documentation for the
+#'   `altrep` argument of [vroom::vroom()].
 #' @param num_threads The number of processing threads to use for initial
 #'   parsing and lazy reading of data. If your data contains newlines within
 #'   fields the parser should automatically detect this and fall back to using
@@ -122,8 +120,34 @@ NULL
 #' read_csv("https://github.com/tidyverse/readr/raw/main/inst/extdata/mtcars.csv")
 #' }
 #'
+#' # Read from multiple file paths at once
+#' continents <- c("africa", "americas", "asia", "europe", "oceania")
+#' filepaths <- vapply(
+#'   paste0("mini-gapminder-", continents, ".csv"),
+#'   FUN = readr_example,
+#'   FUN.VALUE = character(1)
+#' )
+#' read_csv(filepaths, id = "file")
+#'
 #' # Or directly from a string with `I()`
 #' read_csv(I("x,y\n1,2\n3,4"))
+#'
+#' # Column selection-----------------------------------------------------------
+#' # Pass column names or indexes directly to select them
+#' read_csv(readr_example("chickens.csv"), col_select = c(chicken, eggs_laid))
+#' read_csv(readr_example("chickens.csv"), col_select = c(1, 3:4))
+#'
+#' # Or use the selection helpers
+#' read_csv(
+#'   readr_example("chickens.csv"),
+#'   col_select = c(starts_with("c"), last_col())
+#' )
+#'
+#' # You can also rename specific columns
+#' read_csv(
+#'   readr_example("chickens.csv"),
+#'   col_select = c(egg_yield = eggs_laid, everything())
+#' )
 #'
 #' # Column types --------------------------------------------------------------
 #' # By default, readr guesses the columns types, looking at `guess_max` rows.
@@ -138,6 +162,19 @@ NULL
 #' y <- read_csv(I("x\n1\n2\nb"), col_types = list(col_double()))
 #' y
 #' problems(y)
+#'
+#' # Column names --------------------------------------------------------------
+#' # By default, readr duplicate name repair is noisy
+#' read_csv(I("x,x\n1,2\n3,4"))
+#'
+#' # To quiet, set the option that controls verbosity of name repair
+#' withr::with_options(
+#'   list(rlib_name_repair_verbosity = "quiet"),
+#'   read_csv(I("x,x\n1,2\n3,4"))
+#' )
+#'
+#' # Or use "minimal" to turn off name repair
+#' read_csv(I("x,x\n1,2\n3,4"), name_repair = "minimal")
 #'
 #' # File types ----------------------------------------------------------------
 #' read_csv(I("a,b\n1.0,2.0"))
@@ -434,7 +471,7 @@ read_delimited <- function(file, tokenizer, col_names = TRUE, col_types = NULL,
 
   if (
     ((is.null(show_col_types) && !has_col_types) || isTRUE(show_col_types)) &&
-    !inherits(ds, "source_string")
+      !inherits(ds, "source_string")
   ) {
     show_cols_spec(spec)
   }

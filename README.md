@@ -8,8 +8,8 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/readr)](https://CRAN.R-project.org/package=readr)
 [![R-CMD-check](https://github.com/tidyverse/readr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tidyverse/readr/actions/workflows/R-CMD-check.yaml)
-[![Coverage
-Status](https://codecov.io/gh/tidyverse/readr/coverage.svg?branch=main)](https://app.codecov.io/gh/tidyverse/readr?branch=main)
+[![Codecov test
+coverage](https://codecov.io/gh/tidyverse/readr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/tidyverse/readr?branch=main)
 <!-- badges: end -->
 
 ## Overview
@@ -52,14 +52,14 @@ readr is part of the core tidyverse, so you can load it with:
 
 ``` r
 library(tidyverse)
-#> ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──
-#> ✓ ggplot2 3.3.5          ✓ purrr   0.3.4     
-#> ✓ tibble  3.1.6          ✓ dplyr   1.0.7     
-#> ✓ tidyr   1.1.4          ✓ stringr 1.4.0     
-#> ✓ readr   2.1.1.9000     ✓ forcats 0.5.1
+#> ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+#> ✔ ggplot2 3.3.6          ✔ purrr   0.3.4     
+#> ✔ tibble  3.1.8          ✔ dplyr   1.0.10    
+#> ✔ tidyr   1.2.1          ✔ stringr 1.4.1.9000
+#> ✔ readr   2.1.2.9000     ✔ forcats 0.5.2     
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> x dplyr::filter() masks stats::filter()
-#> x dplyr::lag()    masks stats::lag()
+#> ✖ dplyr::filter() masks stats::filter()
+#> ✖ dplyr::lag()    masks stats::lag()
 ```
 
 Of course, you can also load readr as an individual package:
@@ -234,9 +234,3 @@ Thanks to:
 
 -   [Dirk Eddelbuettel](http://dirk.eddelbuettel.com) for coming up with
     the name!
-
-## Code of Conduct
-
-Please note that the readr project is released with a [Contributor Code
-of Conduct](https://readr.tidyverse.org/CONDUCT.html). By contributing
-to this project, you agree to abide by its terms.
