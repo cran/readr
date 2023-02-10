@@ -69,10 +69,10 @@ ragged fwf file), supply the last end position as NA.}
 \item{col_types}{One of \code{NULL}, a \code{\link[=cols]{cols()}} specification, or
 a string. See \code{vignette("readr")} for more details.
 
-If \code{NULL}, all column types will be imputed from \code{guess_max} rows
-on the input interspersed throughout the file. This is convenient (and
-fast), but not robust. If the imputation fails, you'll need to increase
-the \code{guess_max} or supply the correct types yourself.
+If \code{NULL}, all column types will be inferred from \code{guess_max} rows of the
+input, interspersed throughout the file. This is convenient (and fast),
+but not robust. If the guessed types are wrong, you'll need to increase
+\code{guess_max} or supply the correct types yourself.
 
 Column specifications created by \code{\link[=list]{list()}} or \code{\link[=cols]{cols()}} must contain
 one column specification for each column. If you only want to read a
@@ -92,11 +92,11 @@ character represents one column:
 \item t = time
 \item ? = guess
 \item _ or - = skip
+}
 
 By default, reading a file without a column specification will print a
 message showing what \code{readr} guessed they were. To remove this message,
-set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).
-}}
+set \code{show_col_types = FALSE} or set `options(readr.show_col_types = FALSE).}
 
 \item{col_select}{Columns to include in the results. You can use the same
 mini-language as \code{dplyr::select()} to refer to the columns by name. Use
@@ -130,6 +130,7 @@ each field before parsing it?}
 \item{n_max}{Maximum number of lines to read.}
 
 \item{guess_max}{Maximum number of lines to use for guessing column types.
+Will never use more than the number of lines read.
 See \code{vignette("column-types", package = "readr")} for more details.}
 
 \item{progress}{Display a progress bar? By default it will only display
