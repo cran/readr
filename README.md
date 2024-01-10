@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# readr <a href="https://readr.tidyverse.org"><img src="man/figures/logo.png" align="right" height="139" /></a>
+# readr <a href="https://readr.tidyverse.org"><img src="man/figures/logo.png" align="right" height="138" alt = ""/></a>
 
 <!-- badges: start -->
 
@@ -20,7 +20,7 @@ rectangular data from delimited files, such as comma-separated values
 of data found in the wild, while providing an informative problem report
 when parsing leads to unexpected results. If you are new to readr, the
 best place to start is the [data import
-chapter](https://r4ds.had.co.nz/data-import.html) in R for Data Science.
+chapter](https://r4ds.hadley.nz/data-import) in R for Data Science.
 
 ## Installation
 
@@ -36,15 +36,15 @@ install.packages("readr")
 
 ``` r
 # Or you can install the development version from GitHub:
-# install.packages("devtools")
-devtools::install_github("tidyverse/readr")
+# install.packages("pak")
+pak::pak("tidyverse/readr")
 ```
 
 </div>
 
 ## Cheatsheet
 
-<a href="https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-import.pdf"><img src="https://github.com/rstudio/cheatsheets/raw/main/pngs/thumbnails/data-import-cheatsheet-thumbs.png" height="252"/></a>
+<a href="https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-import.pdf"><img src="https://github.com/rstudio/cheatsheets/raw/main/pngs/thumbnails/data-import-cheatsheet-thumbs.png" height="252" alt="thumbnail of tidyverse data import cheatsheet"//></a>
 
 ## Usage
 
@@ -52,14 +52,16 @@ readr is part of the core tidyverse, so you can load it with:
 
 ``` r
 library(tidyverse)
-#> ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-#> ✔ ggplot2 3.4.0          ✔ purrr   1.0.1     
-#> ✔ tibble  3.1.8          ✔ dplyr   1.1.0     
-#> ✔ tidyr   1.3.0          ✔ stringr 1.5.0     
-#> ✔ readr   2.1.3.9000     ✔ forcats 1.0.0     
+#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+#> ✔ dplyr     1.1.4          ✔ readr     2.1.4.9000
+#> ✔ forcats   1.0.0          ✔ stringr   1.5.1     
+#> ✔ ggplot2   3.4.3          ✔ tibble    3.2.1     
+#> ✔ lubridate 1.9.3          ✔ tidyr     1.3.0     
+#> ✔ purrr     1.0.2          
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
+#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 ```
 
 Of course, you can also load readr as an individual package:

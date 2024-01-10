@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 library(readr)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
@@ -30,7 +30,7 @@ parse_datetime("2001-10-10 20:10")
 parse_datetime("2001-10-10 20:10", locale = locale(tz = "Pacific/Auckland"))
 parse_datetime("2001-10-10 20:10", locale = locale(tz = "Europe/Dublin"))
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  is_datetime <- sapply(df, inherits, "POSIXct")
 #  df[is_datetime] <- lapply(df[is_datetime], function(x) {
 #    attr(x, "tzone") <- "UTC"
@@ -52,41 +52,41 @@ str(parse_guess("5:55:14 PM"))
 str(parse_guess("h5m55s14 PM"))
 str(parse_guess("h5m55s14 PM", locale = locale(time_format = "h%Hm%Ms%S %p")))
 
-## ---- eval = FALSE------------------------------------------------------------
-#  library(stringi)
-#  x <- "Émigré cause célèbre déjà vu.\n"
-#  y <- stri_conv(x, "UTF-8", "latin1")
-#  
-#  # These strings look like they're identical:
-#  x
-#  y
-#  identical(x, y)
-#  
-#  # But they have difference encodings:
-#  Encoding(x)
-#  Encoding(y)
-#  
-#  # That means while they print the same, their raw (binary)
-#  # representation is actually quite different:
-#  charToRaw(x)
-#  charToRaw(y)
-#  
-#  # readr expects strings to be encoded as UTF-8. If they're
-#  # not, you'll get weird characters
-#  parse_character(x)
-#  parse_character(y)
-#  
-#  # If you know the encoding, supply it:
-#  parse_character(y, locale = locale(encoding = "latin1"))
+## -----------------------------------------------------------------------------
+library(stringi)
+x <- "Émigré cause célèbre déjà vu.\n"
+y <- stri_conv(x, "UTF-8", "latin1")
 
-## ---- eval = FALSE------------------------------------------------------------
-#  guess_encoding(x)
-#  guess_encoding(y)
-#  
-#  # Note that the first guess produces a valid string, but isn't correct:
-#  parse_character(y, locale = locale(encoding = "ISO-8859-2"))
-#  # But ISO-8859-1 is another name for latin1
-#  parse_character(y, locale = locale(encoding = "ISO-8859-1"))
+# These strings look like they're identical:
+x
+y
+identical(x, y)
+
+# But they have different encodings:
+Encoding(x)
+Encoding(y)
+
+# That means while they print the same, their raw (binary)
+# representation is actually quite different:
+charToRaw(x)
+charToRaw(y)
+
+# readr expects strings to be encoded as UTF-8. If they're
+# not, you'll get weird characters
+parse_character(x)
+parse_character(y)
+
+# If you know the encoding, supply it:
+parse_character(y, locale = locale(encoding = "latin1"))
+
+## -----------------------------------------------------------------------------
+guess_encoding(x)
+guess_encoding(y)
+
+# Note that the first guess produces a valid string, but isn't correct:
+parse_character(y, locale = locale(encoding = "ISO-8859-2"))
+# But ISO-8859-1 is another name for latin1
+parse_character(y, locale = locale(encoding = "ISO-8859-1"))
 
 ## -----------------------------------------------------------------------------
 parse_double("1,23", locale = locale(decimal_mark = ","))
