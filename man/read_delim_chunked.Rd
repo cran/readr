@@ -93,13 +93,11 @@ read_tsv_chunked(
 Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
 be automatically uncompressed. Files starting with \verb{http://},
 \verb{https://}, \verb{ftp://}, or \verb{ftps://} will be automatically
-downloaded. Remote gz files can also be automatically downloaded and
+downloaded. Remote \code{.gz} files can also be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. To be recognised as
-literal data, the input must be either wrapped with \code{I()}, be a string
-containing at least one new line, or be a vector containing at least one
-string with a new line.
+literal data, wrap the input with \code{I()}.
 
 Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
@@ -177,9 +175,8 @@ names.}
 \item{na}{Character vector of strings to interpret as missing values. Set this
 option to \code{character()} to indicate no missing values.}
 
-\item{quoted_na}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Should missing values
-inside quotes be treated as missing values (the default) or strings. This
-parameter is soft deprecated as of readr 2.0.0.}
+\item{quoted_na}{Should missing values inside quotes be treated as missing
+values (the default) or strings.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}
@@ -187,8 +184,7 @@ comment characters will be silently ignored.}
 \item{trim_ws}{Should leading and trailing whitespace (ASCII spaces and tabs) be trimmed from
 each field before parsing it?}
 
-\item{skip}{Number of lines to skip before reading data. If \code{comment} is
-supplied any commented lines are ignored \emph{after} skipping.}
+\item{skip}{Number of lines to skip before reading data.}
 
 \item{guess_max}{Maximum number of lines to use for guessing column types.
 Will never use more than the number of lines read.
@@ -222,7 +218,6 @@ read_csv_chunked(readr_example("mtcars.csv"), DataFrameCallback$new(f), chunk_si
 \seealso{
 Other chunked: 
 \code{\link{callback}},
-\code{\link{melt_delim_chunked}()},
 \code{\link{read_lines_chunked}()}
 }
 \concept{chunked}

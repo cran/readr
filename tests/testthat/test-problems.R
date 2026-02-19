@@ -1,6 +1,6 @@
 test_that("stop_for_problems throws error", {
   expect_warning(x <- parse_integer("1.234"))
-  expect_error(stop_for_problems(x), "1 parsing failure")
+  expect_snapshot(stop_for_problems(x), error = TRUE)
 })
 
 test_that("skipping columns gives incorrect problem column (#573)", {
@@ -79,6 +79,8 @@ test_that("problems returns full original field (#444)", {
 })
 
 test_that("warn_problems should not fail when parsing non-ASCII characters (#1152)", {
-  expect_warning(probs <- warn_problems(readRDS("test-non-ascii-1152.rds")))
+  expect_warning(
+    probs <- warn_problems(readRDS(test_fixture("test-non-ascii-1152.rds")))
+  )
   expect_equal(NROW(probs), 10)
 })

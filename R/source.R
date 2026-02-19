@@ -6,13 +6,11 @@
 #'    Files ending in `.gz`, `.bz2`, `.xz`, or `.zip` will
 #'    be automatically uncompressed. Files starting with `http://`,
 #'    `https://`, `ftp://`, or `ftps://` will be automatically
-#'    downloaded. Remote gz files can also be automatically downloaded and
+#'    downloaded. Remote `.gz` files can also be automatically downloaded and
 #'    decompressed.
 #'
 #'    Literal data is most useful for examples and tests. To be recognised as
-#'    literal data, the input must be either wrapped with `I()`, be a string
-#'    containing at least one new line, or be a vector containing at least one
-#'    string with a new line.
+#'    literal data, wrap the input with `I()`.
 #'
 #'    Using a value of [clipboard()] will read from the system clipboard.
 #'
@@ -60,7 +58,7 @@ datasource <- function(
   } else if (is.raw(file)) {
     datasource_raw(file, skip, skip_empty_rows, comment, skip_quote)
   } else if (is.character(file)) {
-    if (length(file) > 1) {
+    if (length(file) > 1 || inherits(file, "AsIs")) {
       datasource_string(
         paste(file, collapse = "\n"),
         skip,
@@ -323,6 +321,10 @@ empty_file <- function(x) {
   is.character(x) &&
     file.exists(x) &&
     file.info(x, extra_cols = FALSE)$size == 0
+}
+
+empty_raw <- function(x) {
+  is.raw(x) && length(x) == 0
 }
 
 #' Returns values from the clipboard

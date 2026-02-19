@@ -20,6 +20,7 @@ These classes are used to define callback behaviors.
 Callback function that accumulates a single result. Requires the parameter \code{acc} to specify
 the initial value of the accumulator.  The parameter \code{acc} is \code{NULL} by default.
 }
+\item{ListCallback}{Callback function that returns the results in a list.}
 }
 }
 \examples{
@@ -48,7 +49,6 @@ read_csv_chunked(readr_example("mtcars.csv"), AccumulateCallback$new(f, acc = 0)
 }
 \seealso{
 Other chunked: 
-\code{\link{melt_delim_chunked}()},
 \code{\link{read_delim_chunked}()},
 \code{\link{read_lines_chunked}()}
 }

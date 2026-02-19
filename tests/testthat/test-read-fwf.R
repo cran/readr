@@ -1,9 +1,9 @@
 test_that("trailing spaces ommitted", {
-  spec <- fwf_empty("fwf-trailing.txt")
+  spec <- fwf_empty(test_fixture("fwf-trailing.txt"))
   expect_equal(spec$begin, c(0, 4))
   expect_equal(spec$end, c(3, NA))
 
-  df <- read_fwf("fwf-trailing.txt", spec)
+  df <- read_fwf(test_fixture("fwf-trailing.txt"), spec)
   expect_equal(df$X1, df$X2)
 })
 
@@ -66,7 +66,7 @@ test_that("ragged last column expanded with NA", {
 })
 
 test_that("ragged last column shrunk with warning", {
-  x <- read_fwf(I("1a\n2ab\n3abc"), fwf_widths(c(1, 3)))
+  x <- suppressWarnings(read_fwf(I("1a\n2ab\n3abc"), fwf_widths(c(1, 3))))
   expect_equal(x$X2, c("a", "ab", "abc"))
   skip_if_edition_second()
   expect_equal(n_problems(x), 2)
@@ -174,9 +174,10 @@ test_that("error on empty spec (#511, #519)", {
   skip_if_edition_second()
   txt <- "foo\n"
   pos <- fwf_positions(start = numeric(0), end = numeric(0))
-  expect_error(
+  expect_snapshot(
     read_fwf(I(txt), pos),
-    "Zero-length.*specifications not supported"
+    error = TRUE,
+    variant = edition_variant()
   )
 })
 
@@ -184,7 +185,11 @@ test_that("error on negatives in fwf spec", {
   skip_if_edition_second()
   txt <- "foo\n"
   pos <- fwf_positions(start = c(1, -1), end = c(2, 3))
-  expect_error(read_fwf(I(txt), pos), ".*offset.*greater than 0")
+  expect_snapshot(
+    read_fwf(I(txt), pos),
+    error = TRUE,
+    variant = edition_variant()
+  )
 })
 
 test_that("fwf spec can overlap", {
@@ -211,8 +216,16 @@ test_that("fwf_cols produces correct fwf_positions object with elements of lengt
 
 
 test_that("fwf_cols throws error when arguments are not length 1 or 2", {
-  expect_error(fwf_cols(a = 1:3, b = 4:5))
-  expect_error(fwf_cols(a = c(), b = 4:5))
+  expect_snapshot(
+    fwf_cols(a = 1:3, b = 4:5),
+    error = TRUE,
+    variant = edition_variant()
+  )
+  expect_snapshot(
+    fwf_cols(a = c(), b = 4:5),
+    error = TRUE,
+    variant = edition_variant()
+  )
 })
 
 test_that("fwf_cols works with unnamed columns", {
@@ -271,4 +284,20 @@ test_that("fwf_positions always returns col_names as character (#797)", {
   expect_type(info$begin, "double")
   expect_type(info$end, "double")
   expect_type(info$col_names, "character")
+})
+
+test_that("literal data without I() emits deprecation warning (#1611)", {
+  skip_if_edition_first()
+  withr::local_options(lifecycle_verbosity = "warning")
+
+  expect_snapshot(
+    x <- read_fwf("abcd\nefgh", fwf_widths(c(2, 2)), show_col_types = FALSE),
+    cnd_class = TRUE
+  )
+})
+
+test_that("literal data with I() does not warn", {
+  expect_no_condition(
+    read_fwf(I("abcd\nefgh"), fwf_widths(c(2, 2)), show_col_types = FALSE)
+  )
 })

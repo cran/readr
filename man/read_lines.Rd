@@ -32,8 +32,7 @@ write_lines(
   sep = "\\n",
   na = "NA",
   append = FALSE,
-  num_threads = readr_threads(),
-  path = deprecated()
+  num_threads = readr_threads()
 )
 }
 \arguments{
@@ -43,13 +42,11 @@ write_lines(
 Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
 be automatically uncompressed. Files starting with \verb{http://},
 \verb{https://}, \verb{ftp://}, or \verb{ftps://} will be automatically
-downloaded. Remote gz files can also be automatically downloaded and
+downloaded. Remote \code{.gz} files can also be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. To be recognised as
-literal data, the input must be either wrapped with \code{I()}, be a string
-containing at least one new line, or be a vector containing at least one
-string with a new line.
+literal data, wrap the input with \code{I()}.
 
 Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
 
@@ -101,9 +98,6 @@ systems like macOS and linux. For native windows (CRLF) separators use
 \item{append}{If \code{FALSE}, will overwrite existing file. If \code{TRUE},
 will append to existing file. In both cases, if the file does not exist a new
 file is created.}
-
-\item{path}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{file} argument
-instead.}
 }
 \value{
 \code{read_lines()}: A character vector with one element for each line.

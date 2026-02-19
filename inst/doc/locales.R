@@ -1,4 +1,4 @@
-## ----include = FALSE----------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(readr)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
@@ -30,7 +30,7 @@ parse_datetime("2001-10-10 20:10")
 parse_datetime("2001-10-10 20:10", locale = locale(tz = "Pacific/Auckland"))
 parse_datetime("2001-10-10 20:10", locale = locale(tz = "Europe/Dublin"))
 
-## ----eval = FALSE-------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # is_datetime <- sapply(df, inherits, "POSIXct")
 # df[is_datetime] <- lapply(df[is_datetime], function(x) {
 #   attr(x, "tzone") <- "UTC"

@@ -20,7 +20,7 @@ spec_delim(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   comment = "",
   trim_ws = FALSE,
   skip = 0,
@@ -42,7 +42,7 @@ spec_csv(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\\"",
   comment = "",
   trim_ws = TRUE,
@@ -65,7 +65,7 @@ spec_csv2(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\\"",
   comment = "",
   trim_ws = TRUE,
@@ -88,7 +88,7 @@ spec_tsv(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\\"",
   comment = "",
   trim_ws = TRUE,
@@ -119,21 +119,18 @@ spec_table(
 )
 }
 \arguments{
-\item{file}{Either a path to a file, a connection, or literal data
-(either a single string or a raw vector).
+\item{file}{Either a path to a file, a connection, or literal data (either a
+single string or a raw vector). \code{file} can also be a character vector
+containing multiple filepaths or a list containing multiple connections.
 
-Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will
-be automatically uncompressed. Files starting with \verb{http://},
-\verb{https://}, \verb{ftp://}, or \verb{ftps://} will be automatically
-downloaded. Remote gz files can also be automatically downloaded and
+Files ending in \code{.gz}, \code{.bz2}, \code{.xz}, or \code{.zip} will be automatically
+decompressed. Files starting with \verb{http://}, \verb{https://}, \verb{ftp://}, or
+\verb{ftps://} will be automatically downloaded. Remote compressed files
+(\code{.gz}, \code{.bz2}, \code{.xz}, \code{.zip}) will be automatically downloaded and
 decompressed.
 
 Literal data is most useful for examples and tests. To be recognised as
-literal data, the input must be either wrapped with \code{I()}, be a string
-containing at least one new line, or be a vector containing at least one
-string with a new line.
-
-Using a value of \code{\link[=clipboard]{clipboard()}} will read from the system clipboard.}
+literal data, wrap the input with \code{I()}.}
 
 \item{delim}{Single character used to separate fields within a record.}
 
@@ -219,7 +216,8 @@ option to \code{character()} to indicate no missing values.}
 
 \item{quoted_na}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Should missing values
 inside quotes be treated as missing values (the default) or strings. This
-parameter is soft deprecated as of readr 2.0.0.}
+argument is deprecated and only works when using the legacy first edition
+parser. See \code{\link[=with_edition]{with_edition()}} for more.}
 
 \item{comment}{A string used to identify comments. Any text after the
 comment characters will be silently ignored.}

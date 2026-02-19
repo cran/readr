@@ -8,7 +8,6 @@ NULL
 #' flat file data, comma separated values and tab separated values,
 #' respectively. `read_csv2()` uses `;` for the field separator and `,` for the
 #' decimal point. This format is common in some European countries.
-#' @inheritParams datasource
 #' @inheritParams tokenizer_delim
 #' @inheritParams vroom::vroom
 #' @param col_names Either `TRUE`, `FALSE` or a character vector
@@ -108,6 +107,10 @@ NULL
 #'   This argument is passed on as `repair` to [vctrs::vec_as_names()].
 #'   See there for more details on these terms and the strategies used
 #'   to enforce them.
+#' @param quoted_na `r lifecycle::badge("deprecated")` Should missing values
+#'   inside quotes be treated as missing values (the default) or strings. This
+#'   argument is deprecated and only works when using the legacy first edition
+#'   parser. See [with_edition()] for more.
 #'
 #' @return A [tibble()]. If there are parsing problems, a warning will alert you.
 #'   You can retrieve the full details by calling [problems()] on your dataset.
@@ -199,7 +202,7 @@ read_delim <- function(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   comment = "",
   trim_ws = FALSE,
   skip = 0,
@@ -220,6 +223,11 @@ read_delim <- function(
     )
   }
   if (edition_first()) {
+    quoted_na <- if (is_present(quoted_na)) {
+      quoted_na
+    } else {
+      TRUE
+    }
     tokenizer <- tokenizer_delim(
       delim,
       quote = quote,
@@ -246,9 +254,24 @@ read_delim <- function(
       show_col_types = show_col_types
     ))
   }
+
   if (!missing(quoted_na)) {
-    lifecycle::deprecate_soft("2.0.0", "readr::read_delim(quoted_na = )")
+    lifecycle::deprecate_stop(
+      when = "2.0.0",
+      what = "readr::read_delim(quoted_na = )",
+      details = c(
+        "i" = "This argument is not supported in readr edition 2.",
+        "i" = "Use `with_edition(1, ...)` or `local_edition(1)` to use the legacy edition 1."
+      )
+    )
   }
+
+  file <- standardise_literal_data(
+    file,
+    "read_delim",
+    env = current_env(),
+    user_env = caller_env()
+  )
 
   vroom::vroom(
     file,
@@ -286,7 +309,7 @@ read_csv <- function(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\"",
   comment = "",
   trim_ws = TRUE,
@@ -301,6 +324,11 @@ read_csv <- function(
   lazy = should_read_lazy()
 ) {
   if (edition_first()) {
+    quoted_na <- if (is_present(quoted_na)) {
+      quoted_na
+    } else {
+      TRUE
+    }
     tokenizer <- tokenizer_csv(
       na = na,
       quoted_na = quoted_na,
@@ -328,8 +356,23 @@ read_csv <- function(
   }
 
   if (!missing(quoted_na)) {
-    lifecycle::deprecate_soft("2.0.0", "readr::read_csv(quoted_na = )")
+    lifecycle::deprecate_stop(
+      when = "2.0.0",
+      what = "readr::read_csv(quoted_na = )",
+      details = c(
+        "i" = "This argument is not supported in readr edition 2.",
+        "i" = "Use `with_edition(1, ...)` or `local_edition(1)` to use the legacy edition 1."
+      )
+    )
   }
+
+  file <- standardise_literal_data(
+    file,
+    "read_csv",
+    env = current_env(),
+    user_env = caller_env()
+  )
+
   vroom::vroom(
     file,
     delim = ",",
@@ -366,7 +409,7 @@ read_csv2 <- function(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\"",
   comment = "",
   trim_ws = TRUE,
@@ -388,6 +431,11 @@ read_csv2 <- function(
     locale$grouping_mark <- "."
   }
   if (edition_first()) {
+    quoted_na <- if (is_present(quoted_na)) {
+      quoted_na
+    } else {
+      TRUE
+    }
     tokenizer <- tokenizer_delim(
       delim = ";",
       na = na,
@@ -412,6 +460,25 @@ read_csv2 <- function(
       show_col_types = show_col_types
     ))
   }
+
+  if (!missing(quoted_na)) {
+    lifecycle::deprecate_stop(
+      when = "2.0.0",
+      what = "readr::read_csv2(quoted_na = )",
+      details = c(
+        "i" = "This argument is not supported in readr edition 2.",
+        "i" = "Use `with_edition(1, ...)` or `local_edition(1)` to use the legacy edition 1."
+      )
+    )
+  }
+
+  file <- standardise_literal_data(
+    file,
+    "read_csv2",
+    env = current_env(),
+    user_env = caller_env()
+  )
+
   vroom::vroom(
     file,
     delim = ";",
@@ -448,7 +515,7 @@ read_tsv <- function(
   id = NULL,
   locale = default_locale(),
   na = c("", "NA"),
-  quoted_na = TRUE,
+  quoted_na = deprecated(),
   quote = "\"",
   comment = "",
   trim_ws = TRUE,
@@ -462,15 +529,20 @@ read_tsv <- function(
   skip_empty_rows = TRUE,
   lazy = should_read_lazy()
 ) {
-  tokenizer <- tokenizer_tsv(
-    na = na,
-    quoted_na = quoted_na,
-    quote = quote,
-    comment = comment,
-    trim_ws = trim_ws,
-    skip_empty_rows = skip_empty_rows
-  )
   if (edition_first()) {
+    quoted_na <- if (is_present(quoted_na)) {
+      quoted_na
+    } else {
+      TRUE
+    }
+    tokenizer <- tokenizer_tsv(
+      na = na,
+      quoted_na = quoted_na,
+      quote = quote,
+      comment = comment,
+      trim_ws = trim_ws,
+      skip_empty_rows = skip_empty_rows
+    )
     return(read_delimited(
       file,
       tokenizer,
@@ -486,6 +558,24 @@ read_tsv <- function(
       show_col_types = show_col_types
     ))
   }
+
+  if (!missing(quoted_na)) {
+    lifecycle::deprecate_stop(
+      when = "2.0.0",
+      what = "readr::read_tsv(quoted_na = )",
+      details = c(
+        "i" = "This argument is not supported in readr edition 2.",
+        "i" = "Use `with_edition(1, ...)` or `local_edition(1)` to use the legacy edition 1."
+      )
+    )
+  }
+
+  file <- standardise_literal_data(
+    file,
+    "read_tsv",
+    env = current_env(),
+    user_env = caller_env()
+  )
 
   vroom::vroom(
     file,
@@ -514,6 +604,40 @@ read_tsv <- function(
 }
 
 # Helper functions for reading from delimited files ----------------------------
+
+# This became necessary when vroom 1.7.0 moved up to deprecate_warn() for
+# literal data that was not wrapped in I().
+#
+# We don't want readr users:
+# * To go abruptly from no message to deprecate_warn()
+# * To get a message from vroom that tells them to open an issue on readr
+standardise_literal_data <- function(file, fn, env, user_env) {
+  if (
+    is.character(file) &&
+      length(file) == 1 &&
+      grepl("\n", file) &&
+      !inherits(file, "AsIs")
+  ) {
+    lifecycle::deprecate_soft(
+      "2.2.0",
+      paste0(fn, "(file = 'should use `I()` for literal data')"),
+      details = c(
+        " " = "",
+        " " = "# Bad (for example):",
+        " " = 'read_csv("x,y\\n1,2")',
+        " " = "",
+        " " = "# Good:",
+        " " = 'read_csv(I("x,y\\n1,2"))'
+      ),
+      env = env,
+      user_env = user_env
+    )
+    I(file)
+  } else {
+    file
+  }
+}
+
 read_tokens <- function(
   data,
   tokenizer,
